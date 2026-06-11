@@ -1,4 +1,5 @@
 use crate::games::Games;
+use axum::extract::DefaultBodyLimit;
 use dotenvy::dotenv;
 use log::{LevelFilter, error, info};
 use std::{net::Ipv4Addr, process::exit};
@@ -13,6 +14,8 @@ mod types;
 
 // Cargo package version
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const DEFAULT_MAX_BODY_SIZE: usize = 50 * 1000 * 1000;
 
 #[tokio::main]
 async fn main() {
@@ -36,9 +39,21 @@ async fn main() {
         })
         .unwrap_or(80);
 
+    let max_body_size_byte: usize = std::env::var("QUIZLER_MAX_BODY_SIZE_BYTES")
+        .map(|value| {
+            value
+                .parse::<usize>()
+                .expect("Provided QUIZLER_MAX_BODY_SIZE_BYTES was not a valid unsigned integer")
+        })
+        .unwrap_or(DEFAULT_MAX_BODY_SIZE); // Default max size of 50mb
+
     info!("Starting Quizler on port {} (v{})", port, VERSION);
 
-    let router = http::router();
+    if max_body_size_byte != DEFAULT_MAX_BODY_SIZE {
+        log::debug!("custom max http body size is set = {max_body_size_byte}")
+    }
+
+    let router = http::router().layer(DefaultBodyLimit::max(max_body_size_byte));
 
     // Add CORS and tracing layer to the router in debug mode
     #[cfg(debug_assertions)]
