@@ -1,6 +1,6 @@
 import {
   ServerEvent,
-  type ServerEventOf as ServerEventOf,
+  type ServerEventOf,
   ServerError,
   ServerResponse,
   ClientMessage,
@@ -61,9 +61,10 @@ export interface SocketStore {
   ): Promise<ServerResponseOf<T>>;
 }
 
-type TypedMessageHandlers = {
-  [K in ServerEvent]: ServerEventHandler<K>;
-};
+interface TypedHandlerWithAbort<K extends ServerEvent> {
+  handler: ServerEventHandler<K>;
+  abort?: AbortSignal;
+}
 
 export function createSocketState(appState: AppStateStore): SocketStore {
   let ready = $state(false);
@@ -74,7 +75,10 @@ export function createSocketState(appState: AppStateStore): SocketStore {
   let messageQueue: ServerMessage[] = [];
 
   // Currently set message handlers for handling messages
-  const messageHandlers: Partial<TypedMessageHandlers> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const messageHandlers: Partial<
+    Record<ServerEvent, TypedHandlerWithAbort<any>>
+  > = {};
 
   // Reference to the socket
   let socket: WebSocket = createSocket();
@@ -223,8 +227,9 @@ export function createSocketState(appState: AppStateStore): SocketStore {
     }
 
     // Find the handler for the message
-    const handler = messageHandlers[msg.ty] as ServerEventHandler<unknown>;
-    if (handler !== undefined) {
+    const entry = messageHandlers[msg.ty];
+    if (entry !== undefined && (!entry.abort || !entry.abort.aborted)) {
+      const handler = entry.handler as ServerEventHandler<unknown>;
       // Call the handler with the message
       handler(msg);
       return;
@@ -236,15 +241,15 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
   function setHandler<T extends ServerEvent>(
     ty: T,
-    handler: TypedMessageHandlers[T],
+    handler: ServerEventHandler<T>,
     abort?: AbortSignal
   ) {
-    messageHandlers[ty] = handler;
+    messageHandlers[ty] = { handler, abort };
     console.debug("Added handler for", ty);
 
     // Process matching queued messages
     messageQueue = messageQueue.filter((msg) => {
-      if (isServerEventType(ty, msg)) {
+      if (isServerEventType(ty, msg) && (!abort || !abort.aborted)) {
         // Handle messages that match the handler type
         handler(msg);
         return false;

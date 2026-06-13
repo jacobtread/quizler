@@ -1,8 +1,10 @@
 <script module lang="ts">
-  export const enum ModelSize {
-    Normal,
-    Small
-  }
+  export const ModelSize = {
+    Normal: 0,
+    Small: 1
+  } as const;
+
+  type ModelSizeType = (typeof ModelSize)[keyof typeof ModelSize];
 </script>
 
 <script lang="ts">
@@ -12,7 +14,7 @@
 
   interface Props {
     visible: boolean;
-    size?: ModelSize;
+    size?: ModelSizeType;
     children?: Snippet;
   }
 

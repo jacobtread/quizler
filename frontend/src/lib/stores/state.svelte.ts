@@ -39,7 +39,7 @@ export interface AppStateStore {
 }
 
 export function createAppState(): AppStateStore {
-  let currentState = $state<AppState>({ ty: AppStateType.Home });
+  let currentState = $state.raw<AppState>({ ty: AppStateType.Home });
 
   return {
     get current() {
