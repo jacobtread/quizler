@@ -69,14 +69,17 @@ interface TypedHandlerWithAbort<K extends ServerEvent> {
 export function createSocketState(appState: AppStateStore): SocketStore {
   let ready = $state(false);
 
+  // Token for resuming the connection
+  let resumptionToken: string | null = null;
+
   // Handler for the next response
   let responseHandle: RequestHandler<unknown> | null = null;
   // Queue of messages that haven't yet been handled
   let messageQueue: ServerMessage[] = [];
 
   // Currently set message handlers for handling messages
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messageHandlers: Partial<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Record<ServerEvent, TypedHandlerWithAbort<any>>
   > = {};
 
@@ -100,7 +103,17 @@ export function createSocketState(appState: AppStateStore): SocketStore {
    * the event handlers for the different events
    */
   function createSocket(): WebSocket {
-    const socketUrl = getServerURL("/api/quiz/socket");
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- This is not reactive code it doesn't need it
+    const params = new URLSearchParams();
+
+    if (resumptionToken !== null) {
+      params.set("resume", resumptionToken);
+    }
+
+    const socketParams = params.size > 0 ? `?${params.toString()}` : "";
+    const socketPath = `/api/quiz/socket${socketParams}`;
+
+    const socketUrl = getServerURL(socketPath);
     // Replace the url protocol with the correct socket protocol
     socketUrl.protocol = socketUrl.protocol.includes("https") ? "wss" : "ws";
 
@@ -270,6 +283,10 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
     return destructor;
   }
+
+  setHandler(ServerEvent.ResumptionToken, (event) => {
+    resumptionToken = event.token;
+  });
 
   return {
     get ready() {

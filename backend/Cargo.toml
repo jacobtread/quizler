@@ -42,7 +42,15 @@ embeddy = "0.1.1"
 rustrict = "0.7.7"
 thiserror = "2"
 
+# Unique IDs
 uuid = { version = "1.22.0", features = ["v4", "fast-rng", "serde"] }
+
+# Fast locking primitives without panic poisoning
+parking_lot = "0.12.5"
+
+# Crypto for signing keys to make tokens and base64 to encode them
+ring = "0.17.14"
+base64ct = { version = "1.8.3", features = ["alloc"] }
 
 [profile.release]
 strip = true

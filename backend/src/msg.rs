@@ -106,4 +106,30 @@ pub enum ServerEvent {
         /// The reason the player was kicked
         reason: RemoveReason,
     },
+    /// Provides the token that the session can use to resume itself
+    /// if the socket is lost
+    ResumptionToken {
+        /// The token to resume with
+        token: String,
+    },
+    /// Resumed access to a game
+    ResumedGame {
+        /// The resumed session ID
+        id: SessionId,
+        /// Whether we are the game host
+        host: bool,
+        /// The resumed player name if not resuming as a host
+        name: Option<ImStr>,
+        /// The resumed game token
+        token: GameToken,
+        /// The resumed game token
+        config: Arc<GameConfig>,
+    },
 }
+
+// On resume user must be sent:
+// - List of all players
+// - Game state
+// - Current timer state (Maybe)
+// - Current question if available
+// - Current scores
