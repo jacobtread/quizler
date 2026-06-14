@@ -70,7 +70,8 @@ export function createSocketState(appState: AppStateStore): SocketStore {
   let ready = $state(false);
 
   // Token for resuming the connection
-  let resumptionToken: string | null = null;
+  let resumptionToken: string | null =
+    sessionStorage.getItem("resumptionToken");
 
   // Handler for the next response
   let responseHandle: RequestHandler<unknown> | null = null;
@@ -286,6 +287,7 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
   setHandler(ServerEvent.ResumptionToken, (event) => {
     resumptionToken = event.token;
+    sessionStorage.setItem("resumptionToken", resumptionToken);
   });
 
   return {
