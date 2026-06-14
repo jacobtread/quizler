@@ -16,7 +16,7 @@ use axum::{
 use bytes::BytesMut;
 use embeddy::Embedded;
 use futures_util::TryStreamExt;
-use log::{debug, info};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
