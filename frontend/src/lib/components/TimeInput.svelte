@@ -10,10 +10,10 @@
 
   let { value = $bindable(), min, max }: Props = $props();
 
-  const enum Unit {
-    Seconds,
-    Minutes
-  }
+  const Unit = {
+    Seconds: 0,
+    Minutes: 1
+  };
 
   let unit = $state(Unit.Seconds);
   let actualValue = $state(convertTo(value));

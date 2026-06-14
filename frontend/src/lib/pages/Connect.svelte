@@ -17,10 +17,10 @@
   import stateContext from "$lib/context/state";
   import socketContext from "$lib/context/socket";
 
-  const enum State {
-    Connect,
-    Join
-  }
+  const State = {
+    Connect: 0,
+    Join: 1
+  };
 
   const appState = stateContext.get();
   const socket = socketContext.get();

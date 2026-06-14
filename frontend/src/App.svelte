@@ -28,7 +28,13 @@
   {:else if appState.ty === AppStateType.Connect}
     <Connect />
   {:else if appState.ty === AppStateType.Game}
-    <Game gameData={appState.gameData} />
+    {const gameData = appState.gameData}
+    <!--
+    ^ gameData must be captured as a local constant to avoid reactively passing the state which
+    causes the gameData to become undefined when the socket handlers access it slightly before
+    the component is unmounted when a game is left
+    -->
+    <Game {gameData} />
   {/if}
 {:else}
   <Loading text="Connecting to server..." />
