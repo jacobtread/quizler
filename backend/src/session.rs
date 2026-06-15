@@ -157,7 +157,7 @@ impl Session {
                 }
 
                 // If we are disconnected run the resumption timeout future
-                _ = &mut resumption_timeout, if  self.socket.is_none()  => {
+                _ = &mut resumption_timeout, if self.socket.is_none()  => {
                     debug!("Session connection lost and exceeded resumption window, closing: {}", self.id);
                     break;
                 }

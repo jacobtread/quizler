@@ -126,10 +126,3 @@ pub enum ServerEvent {
         config: Arc<GameConfig>,
     },
 }
-
-// On resume user must be sent:
-// - List of all players
-// - Game state
-// - Current timer state (Maybe)
-// - Current question if available
-// - Current scores
