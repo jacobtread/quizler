@@ -468,4 +468,15 @@ impl EventTarget {
     pub fn send(&self, event: Arc<ServerEvent>) {
         _ = self.0.send(event);
     }
+
+    /// Same as [`EventTarget::send`] except takes an
+    /// owned instanced of [ServerEvent] rather than
+    /// a shared reference
+    ///
+    /// # Arguments
+    /// * event - The server event to send
+    #[inline]
+    pub fn send_owned(&self, event: ServerEvent) {
+        self.send(Arc::new(event));
+    }
 }

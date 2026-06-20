@@ -1,5 +1,5 @@
 use crate::{
-    game::{Game, GameConfig, GameRef},
+    game::{Game, GameRef, config::GameConfig},
     session::{EventTarget, SessionId},
     types::{GameToken, ServerError},
 };

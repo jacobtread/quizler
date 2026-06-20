@@ -1,5 +1,5 @@
 use crate::{
-    game::GameConfig,
+    game::config::GameConfig,
     games::Games,
     types::{ImStr, Image, NameFiltering, Question},
 };

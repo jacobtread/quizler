@@ -1,7 +1,7 @@
 //! Contains the definitions of the Client and Server packets
 
 use crate::{
-    game::{GameConfig, GameState},
+    game::{GameState, config::GameConfig},
     session::SessionId,
     types::{
         Answer, GameToken, HostAction, ImStr, Question, RemoveReason, Score, ScoreCollection,
