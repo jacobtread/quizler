@@ -159,6 +159,84 @@ impl Game {
         });
     }
 
+    /// Handle resuming the game session for the player by `session_id` sends the
+    /// relevant information to get the player up to speed
+    pub fn resume_player(&self, session_id: SessionId) {
+        let host = self.host.id == session_id;
+
+        let mut target_addr: Option<&EventTarget> = None;
+        let mut target_player: Option<&PlayerSession> = None;
+
+        if host {
+            target_addr = Some(&self.host.addr);
+        } else {
+            for player in &self.players {
+                if player.id == session_id {
+                    target_addr = Some(&player.addr);
+                    target_player = Some(player);
+                    break;
+                }
+            }
+        }
+
+        let target_addr = match target_addr {
+            Some(player) => player,
+            None => return,
+        };
+
+        // Notify the player they have resumed a game
+        target_addr.send(Arc::new(ServerEvent::ResumedGame {
+            id: session_id,
+            host,
+            token: self.token,
+            config: self.config.clone(),
+            name: target_player.as_ref().map(|player| player.name.clone()),
+        }));
+
+        // Notify the player of all the other players in the game
+        for player in &self.players {
+            target_addr.send(Arc::new(ServerEvent::PlayerData {
+                id: player.id,
+                name: player.name.clone(),
+            }));
+        }
+
+        // Update everyone's scores
+        // (Must come before game state so that the frontend can compute finished scores)
+        let scores: Vec<(SessionId, u32)> = self
+            .players
+            .iter()
+            .map(|player| (player.id, player.score))
+            .collect();
+        let scores = ScoreCollection(scores);
+        target_addr.send(Arc::new(ServerEvent::Scores { scores }));
+
+        // Send the player the current game state
+        target_addr.send(Arc::new(ServerEvent::GameState { state: self.state }));
+
+        match self.state {
+            // Send the current question to the player for states that depend on one
+            GameState::Starting
+            | GameState::AwaitingReady
+            | GameState::PreQuestion
+            | GameState::Marked => {
+                let question = self.config.questions[self.question_index].clone();
+                target_addr.send(Arc::new(ServerEvent::Question { question }));
+
+                // Provide the answer score if the question has been scored
+                // (Only for players and not the host)
+                if let Some(target_player) = target_player {
+                    let answer = target_player.answers.get_answer_ref(self.question_index);
+                    if let Some(score) = answer.score {
+                        target_addr.send(Arc::new(ServerEvent::Score { score }));
+                    }
+                }
+            }
+
+            _ => {}
+        }
+    }
+
     /// Moves the game to the next state based on its current state
     fn next_state(&mut self) {
         // Cancel a delayed task if one is running
@@ -718,6 +796,16 @@ impl PlayerAnswers {
     fn get_answer(&mut self, index: usize) -> &mut PlayerAnswer {
         debug_assert!(index < self.values.len());
         &mut self.values[index]
+    }
+
+    /// Provides a borrow to the player answer at the provided
+    /// index
+    ///
+    /// # Arguments
+    /// * index - The index of the answer within the values array
+    fn get_answer_ref(&self, index: usize) -> &PlayerAnswer {
+        debug_assert!(index < self.values.len());
+        &self.values[index]
     }
 
     /// Checks if theres an answer stored at the provided index

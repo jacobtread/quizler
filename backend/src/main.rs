@@ -1,8 +1,8 @@
-use crate::games::Games;
-use axum::extract::DefaultBodyLimit;
+use crate::{games::Games, session_store::SessionStore, signing::SigningKey};
+use axum::{Extension, extract::DefaultBodyLimit};
 use dotenvy::dotenv;
 use log::{LevelFilter, error, info};
-use std::{net::Ipv4Addr, process::exit};
+use std::{net::Ipv4Addr, process::exit, sync::Arc};
 use tokio::net::TcpListener;
 
 mod game;
@@ -10,6 +10,8 @@ mod games;
 mod http;
 mod msg;
 mod session;
+mod session_store;
+mod signing;
 mod types;
 
 // Cargo package version
@@ -30,6 +32,9 @@ async fn main() {
 
     // Spawn the cleanup future
     tokio::spawn(Games::tick_cleanup());
+
+    let signing_key = SigningKey::generate();
+    let session_store = Arc::new(SessionStore::new(signing_key));
 
     let port: u16 = std::env::var("QUIZLER_PORT")
         .map(|value| {
@@ -53,7 +58,9 @@ async fn main() {
         log::debug!("custom max http body size is set = {max_body_size_byte}")
     }
 
-    let router = http::router().layer(DefaultBodyLimit::max(max_body_size_byte));
+    let router = http::router()
+        .layer(DefaultBodyLimit::max(max_body_size_byte))
+        .layer(Extension(session_store));
 
     // Add CORS and tracing layer to the router in debug mode
     #[cfg(debug_assertions)]

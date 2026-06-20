@@ -2,12 +2,13 @@ use crate::{
     game::GameConfig,
     games::Games,
     session::Session,
+    session_store::{SessionStore, SessionStoreMessage},
     types::{GameToken, ImStr, Image, NameFiltering, Question},
 };
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     body::Body,
-    extract::{Multipart, Path, WebSocketUpgrade, multipart::MultipartError},
+    extract::{Multipart, Path, Query, WebSocketUpgrade, multipart::MultipartError},
     http::{HeaderValue, Request, StatusCode, header::CONTENT_TYPE},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -25,6 +26,7 @@ use std::{
     task::{Context, Poll},
 };
 use thiserror::Error;
+use tokio::sync::mpsc::error::SendError;
 use tower::Service;
 use uuid::Uuid;
 
@@ -203,11 +205,39 @@ async fn quiz_image(Path((token, uuid)): Path<(GameToken, Uuid)>) -> Result<Resp
     Ok(res)
 }
 
+#[derive(Deserialize)]
+struct SocketQuery {
+    /// Optional resumption token to attempt to resume an
+    /// existing session
+    resume: Option<String>,
+}
+
 /// # GET /api/quiz/socket
 ///
 /// Endpoint for creating a new websocket session
-async fn quiz_socket(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(Session::start)
+async fn quiz_socket(
+    Extension(session_store): Extension<Arc<SessionStore>>,
+    Query(query): Query<SocketQuery>,
+    ws: WebSocketUpgrade,
+) -> Response {
+    ws.on_upgrade(async move |socket| {
+        let socket = if let Some(resume) = query.resume
+            && let Ok(session_id) = session_store.verify_session_token(&resume)
+            && let Some(session_tx) = session_store.get_session_tx(session_id)
+        {
+            match session_tx.send(SessionStoreMessage::Reconnect { socket }) {
+                // Session was resumed we can return early
+                Ok(_) => return,
+
+                // Session could not be reached, it must be closed return to starting fresh
+                Err(SendError(SessionStoreMessage::Reconnect { socket })) => socket,
+            }
+        } else {
+            socket
+        };
+
+        Session::start(socket, session_store).await;
+    })
 }
 
 /// Embedded assets for serving the frontend of the application

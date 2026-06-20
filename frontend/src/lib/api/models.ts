@@ -12,7 +12,7 @@ import type { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
 import { z } from "zod";
 
 // Represents a unique ID of a session
-export type SessionId = number;
+export type SessionId = string;
 
 // Represents a 5 character game token (e.g EAU32)
 export type GameToken = string;
@@ -348,7 +348,9 @@ export const enum ServerEvent {
   Question = "Question",
   Scores = "Scores",
   Score = "Score",
-  Kicked = "Kicked"
+  Kicked = "Kicked",
+  ResumptionToken = "ResumptionToken",
+  ResumedGame = "ResumedGame"
 }
 
 // Server response message type
@@ -360,7 +362,7 @@ export const enum ServerResponse {
 
 // Server message schema based on each message type
 export type ServerEventSchema = { ret: undefined } & (
-  | { ty: ServerEvent.PlayerData; id: number; name: string }
+  | { ty: ServerEvent.PlayerData; id: SessionId; name: string }
   | { ty: ServerEvent.GameState; state: GameState }
   | {
       ty: ServerEvent.Timer;
@@ -369,7 +371,16 @@ export type ServerEventSchema = { ret: undefined } & (
   | { ty: ServerEvent.Question; question: Question }
   | { ty: ServerEvent.Scores; scores: Scores }
   | { ty: ServerEvent.Score; score: Score }
-  | { ty: ServerEvent.Kicked; id: number; reason: RemoveReason }
+  | { ty: ServerEvent.Kicked; id: SessionId; reason: RemoveReason }
+  | { ty: ServerEvent.ResumptionToken; token: string }
+  | {
+      ty: ServerEvent.ResumedGame;
+      id: SessionId;
+      host: boolean;
+      name: string | null;
+      token: string;
+      config: GameConfig;
+    }
 );
 
 // Server message type extractor
@@ -383,7 +394,12 @@ export function isServerEventType<T extends ServerEvent>(
 }
 
 export type ServerResponseSchema = { ret: 1 } & (
-  | { ty: ServerResponse.Joined; id: number; token: string; config: GameConfig }
+  | {
+      ty: ServerResponse.Joined;
+      id: SessionId;
+      token: string;
+      config: GameConfig;
+    }
   | { ty: ServerResponse.Ok }
   | { ty: ServerResponse.Error; error: ServerError }
 );

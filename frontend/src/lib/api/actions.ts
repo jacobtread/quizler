@@ -4,7 +4,7 @@ import type { GameData } from "$pages/Game.svelte";
 import { confirmDialog } from "$stores/dialogStore";
 import { type AppStateStore } from "$stores/state.svelte";
 
-export async function doKick(socket: SocketStore, id: number) {
+export async function doKick(socket: SocketStore, id: string) {
   try {
     await socket.send({
       ty: ClientMessage.Kick,

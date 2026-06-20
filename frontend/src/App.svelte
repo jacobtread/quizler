@@ -10,6 +10,8 @@
   import stateContext from "$lib/context/state";
   import { createSocketState } from "$lib/stores/socket.svelte";
   import socketContext from "$lib/context/socket";
+  import { onMount } from "svelte";
+  import { ServerEvent } from "$lib/api/models";
 
   const state = createAppState();
   const socket = createSocketState(state);
@@ -18,6 +20,26 @@
 
   stateContext.set(state);
   socketContext.set(socket);
+
+  onMount(() => {
+    const abortController = new AbortController();
+    const abortSignal = abortController.signal;
+
+    socket.setHandler(
+      ServerEvent.ResumedGame,
+      (msg) => {
+        console.debug("Resumed Game", msg);
+
+        const { id, host, token, config, name } = msg;
+        state.setGame({ id, token, config, host, name: name ?? undefined });
+      },
+      abortSignal
+    );
+
+    return () => {
+      abortController.abort();
+    };
+  });
 </script>
 
 {#if socket.ready}
