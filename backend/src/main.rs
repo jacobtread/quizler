@@ -30,9 +30,6 @@ async fn main() {
         .parse_default_env()
         .init();
 
-    // Spawn the cleanup future
-    tokio::spawn(Games::tick_cleanup());
-
     let signing_key = SigningKey::generate();
     let session_store = Arc::new(SessionStore::new(signing_key));
 
