@@ -131,11 +131,11 @@
     if (!updateFocus) return;
 
     if (inputToken && document.activeElement !== inputToken) {
-      inputToken.focus();
+      inputToken.focus({ preventScroll: true });
     }
 
     if (inputName && document.activeElement !== inputName) {
-      inputName.focus();
+      inputName.focus({ preventScroll: true });
     }
   });
 </script>
@@ -150,10 +150,10 @@
 
 {#if connectState === State.Connect}
   <main class="page page--center page--overflow" transition:slide|global>
-    <h1>Enter Code</h1>
-    <p>Please enter your quiz code below</p>
-
     <form class="form" onsubmit={connect}>
+      <h1>Enter Code</h1>
+      <p>Please enter your quiz code below</p>
+
       <input
         bind:this={inputToken}
         class="special-input"
@@ -178,11 +178,11 @@
   </main>
 {:else}
   <main class="page page--center page--overflow" transition:slide|global>
-    <p>{token}</p>
-    <h1>Enter Name</h1>
-    <p>Please enter your desired name</p>
-
     <form class="form" onsubmit={join}>
+      <p>{token}</p>
+      <h1>Enter Name</h1>
+      <p>Please enter your desired name</p>
+
       <input
         bind:this={inputName}
         class="special-input special-input--small"
@@ -211,6 +211,7 @@
 
   .page {
     gap: 1rem;
+    min-height: 100vh;
   }
 
   .form {
@@ -269,6 +270,15 @@
   }
 
   @media screen and (max-width: 32rem) {
+    .page--center {
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .form {
+      margin-top: 15vh;
+    }
+
     .play,
     .special-input {
       max-width: none;

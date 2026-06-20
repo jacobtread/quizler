@@ -1,7 +1,7 @@
 //! Contains the definitions of the Client and Server packets
 
 use crate::{
-    game::{GameConfig, GameState},
+    game::{GameState, config::GameConfig},
     session::SessionId,
     types::{
         Answer, GameToken, HostAction, ImStr, Question, RemoveReason, Score, ScoreCollection,
@@ -30,38 +30,68 @@ impl Serialize for ServerResponse {
     }
 }
 
+/// Message to initialize the desired game as a host
+#[derive(Deserialize)]
+pub struct InitializeMessage {
+    /// The UUID of the prepared game to initialize
+    pub uuid: Uuid,
+}
+
+/// Message to associate the session with the provided game
+#[derive(Deserialize)]
+pub struct ConnectMessage {
+    /// The game token to try and connect to (e.g. W2133)
+    pub token: String,
+}
+
+/// Message to attempt to join the game using the provided name
+#[derive(Deserialize)]
+pub struct JoinMessage {
+    /// The name to attempt to access with
+    pub name: String,
+}
+
+/// Message indicating the client is ready to play
+///
+/// (This is done internally by clients once everything has been loaded)#[derive(Deserialize)]
+#[derive(Deserialize)]
+pub struct ReadyMessage;
+
+/// Message for actions from the host session
+#[derive(Deserialize)]
+pub struct HostActionMessage {
+    /// Action the host wants to perform
+    pub action: HostAction,
+}
+
+/// Message to answer the question
+#[derive(Deserialize)]
+pub struct AnswerMessage {
+    /// The answer provided by the user
+    pub answer: Answer,
+}
+
+/// Message to kick a player from the game
+///
+/// The player is also allowed to "kick" themselves
+/// to leave the game by their own choice
+#[derive(Deserialize)]
+pub struct KickMessage {
+    /// The ID of the player to kick
+    pub id: SessionId,
+}
+
 /// Messages received from the client
 #[derive(Deserialize)]
 #[serde(tag = "ty")]
 pub enum ClientMessage {
-    // Message to initialize the desired game as a host
-    Initialize {
-        /// The UUID of the game to initialize
-        uuid: Uuid,
-    },
-    // Message to associate the session with the provided game
-    Connect {
-        /// The game token to try and connect to (e.g. W2133)
-        token: String,
-    },
-    /// Message to attempt to join the game using the provided name
-    Join {
-        /// The name to attempt to access with
-        name: String,
-    },
-    /// Message indicating the client is ready to play
-    ///
-    /// (This is done internally by clients once everything has been loaded)
-    Ready,
-    /// Message for actions from the host session
-    HostAction { action: HostAction },
-    /// Message to answer the question
-    Answer { answer: Answer },
-    /// Message for the host to kick a player from the game
-    Kick {
-        /// The ID of the player to kick
-        id: SessionId,
-    },
+    Initialize(InitializeMessage),
+    Connect(ConnectMessage),
+    Join(JoinMessage),
+    Ready(ReadyMessage),
+    HostAction(HostActionMessage),
+    Answer(AnswerMessage),
+    Kick(KickMessage),
 }
 
 #[derive(Serialize)]
@@ -126,3 +156,10 @@ pub enum ServerEvent {
         config: Arc<GameConfig>,
     },
 }
+
+/// Trait implemented by messages that are serializable by the server
+pub trait ServerMessage: Serialize {}
+
+impl ServerMessage for ServerResponse {}
+
+impl ServerMessage for ServerEvent {}

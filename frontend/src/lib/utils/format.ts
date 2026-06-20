@@ -7,12 +7,12 @@ import {
 } from "$stores/imageStore";
 import {
   type Question,
-  createDataSchema,
   type CreateData,
   type CreateDataRuntime
 } from "$api/models";
 import { z } from "zod";
 import { v4 } from "uuid";
+import { createDataSchema } from "$lib/api/schema/game";
 
 const fileFormatSchema = createDataSchema.and(
   z.object({

@@ -5,7 +5,6 @@
     errorText,
     ServerError,
     QuestionType,
-    createDataSchema,
     type CreateData,
     type CreateDataRuntime
   } from "$api/models";
@@ -33,6 +32,7 @@
   } from "$stores/createStore";
   import stateContext from "$lib/context/state";
   import socketContext from "$lib/context/socket";
+  import { createDataSchema } from "$lib/api/schema/game";
 
   const appState = stateContext.get();
   const socket = socketContext.get();
