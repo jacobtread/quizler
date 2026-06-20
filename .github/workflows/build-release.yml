@@ -1,4 +1,4 @@
-name: Build Release
+name: Build and publish release
 
 on:
     # This will trigger when a tag like v1.0.0 is pushed
@@ -19,26 +19,26 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Frontend
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: "24"
 
-            - name: setup pnpm
-              uses: pnpm/action-setup@v6
-
-            - name: Install dependencies
-              working-directory: frontend
-              run: pnpm install --frozen-lockfile
+            - name: setup pnpm and install dependencies
+              uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+              with:
+                  run_install: |
+                      - cwd: frontend
+                        args: --frozen-lockfile
 
             - name: Build frontend
               working-directory: frontend
               run: pnpm run build
 
             - name: Upload frontend artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: frontend-build
                   path: frontend/dist/
@@ -72,11 +72,11 @@ jobs:
 
         steps:
             # Checkout the repo for building
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             # Download the frontend build artifact
             - name: Download frontend artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: frontend-build
                   merge-multiple: true
@@ -84,7 +84,7 @@ jobs:
 
             # Setup rust for building the service
             - name: Set up Rust
-              uses: dtolnay/rust-toolchain@stable
+              uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
               with:
                   toolchain: stable
                   targets: ${{ matrix.target }}
@@ -93,7 +93,7 @@ jobs:
             # Cache Rust dependencies and build artifacts
             - name: Cache Rust dependencies
               id: cache-rust
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.cargo/bin/
@@ -122,7 +122,7 @@ jobs:
 
             # Upload the built artifact
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: ${{ matrix.filename }}
                   path: ${{ matrix.filename }}
@@ -146,11 +146,11 @@ jobs:
 
         steps:
             # Checkout the repo for building
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             # Download the frontend build artifact
             - name: Download frontend artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: frontend-build
                   merge-multiple: true
@@ -158,13 +158,14 @@ jobs:
 
             # Setup rust for building the service
             - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
+              uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
               with:
+                  toolchain: stable
                   targets: ${{ matrix.target }}
 
             # Cache Rust dependencies and build artifacts
             - name: Cache Rust dependencies
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.cargo/bin/
@@ -188,7 +189,7 @@ jobs:
 
             # Upload the built artifact
             - name: Upload binary artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: ${{ matrix.filename }}
                   path: ${{ matrix.filename }}
@@ -212,11 +213,11 @@ jobs:
 
         steps:
             # Checkout the repo for building
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             # Download the frontend build artifact
             - name: Download frontend artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: frontend-build
                   merge-multiple: true
@@ -224,13 +225,14 @@ jobs:
 
             # Setup rust for building the service
             - name: Install Rust
-              uses: dtolnay/rust-toolchain@stable
+              uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
               with:
+                  toolchain: stable
                   targets: ${{ matrix.target }}
 
             # Cache Rust dependencies and build artifacts
             - name: Cache Rust dependencies
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.cargo/bin/
@@ -254,7 +256,7 @@ jobs:
 
             # Upload the built artifact
             - name: Upload binary artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: ${{ matrix.filename }}
                   path: ${{ matrix.filename }}
@@ -266,12 +268,12 @@ jobs:
 
         steps:
             # Checkout the repo
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             # Download all the compiled artifacts from previous
             # steps
             - name: Download all build artifacts
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   path: dist
                   # Only download the executables not the frontend
@@ -280,7 +282,7 @@ jobs:
 
             # Create the github release if we pushed up a new tag
             - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
+              uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
               if: github.event_name == 'push'
               with:
                   tag_name: ${{ github.ref_name }}
