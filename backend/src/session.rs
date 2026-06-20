@@ -1,11 +1,13 @@
 use crate::{
-    game::GameRef,
-    games::{Games, InitializedMessage},
+    game::{
+        GameRef,
+        manager::{Games, InitializedMessage},
+    },
     msg::{ClientMessage, ResponseMessage, ServerEvent, ServerResponse},
     session_store::{SessionStore, SessionStoreMessage},
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
 };
-use axum::extract::ws::{Message, WebSocket};
+use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use bytes::Bytes;
 use futures_util::future::BoxFuture;
 use log::{debug, error};
@@ -14,8 +16,8 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use thiserror::Error;
 use tokio::{
+    io::Sink,
     select,
     sync::mpsc,
     time::{MissedTickBehavior, interval},
@@ -65,10 +67,6 @@ async fn socket_recv_or_pending(
         _ => std::future::pending().await,
     }
 }
-
-#[derive(Debug, Error)]
-#[error("impossible state, ping received without a socket")]
-struct PingOnDeadSocket;
 
 impl Session {
     /// Handler for starting a new session from the provided websocket
@@ -139,20 +137,22 @@ impl Session {
                         },
                     };
 
-                    match self.handle_message(msg).await {
-                        Err(_) => break,
-                        Ok(false)  => {
-                            // In debug close triggers resumption logic to allow testing
-                            // session resumption
-                            #[cfg(debug_assertions)]
-                            continue;
+                    // Close messages are handled ahead of time since they directly
+                    // affect whether we continue or stop the loop
+                    if matches!(&msg, Message::Close(_)) {
+                        // In debug close triggers resumption logic to allow testing
+                        // session resumption
+                        #[cfg(debug_assertions)]
+                        continue;
 
-                            // In real world situations a close is treated as the end
-                            // of the connection
-                            #[cfg(not(debug_assertions))]
-                            break;
-                        },
-                        Ok(true )=> {}
+                        // In real world situations a close is treated as the end
+                        // of the connection
+                        #[cfg(not(debug_assertions))]
+                        break;
+                    }
+
+                    if self.handle_message(msg).await.is_err() {
+                         break;
                     }
                 }
 
@@ -258,74 +258,46 @@ impl Session {
     ///
     /// # Arguments
     /// * msg - The websocket message
-    async fn handle_message(&mut self, msg: Message) -> Result<bool, axum::Error> {
+    async fn handle_message(&mut self, msg: Message) -> Result<(), axum::Error> {
         // Update heartbeat
         self.hb = Instant::now();
 
         // Handle different message types
-        let text = match msg {
-            Message::Text(value) => value,
-            Message::Ping(ping) => {
-                let socket = match &mut self.socket {
-                    Some(socket) => socket,
-
-                    // This technically should be an impossible state
-                    _ => return Err(axum::Error::new(PingOnDeadSocket)),
+        match msg {
+            Message::Text(text) => {
+                let res = match self.handle_text_message(text) {
+                    Ok(value) => ServerResponse(value),
+                    Err(error) => ServerResponse(ResponseMessage::Error { error }),
                 };
 
-                // If sending pong failed break
-                if socket.send(Message::Pong(ping)).await.is_err() {
-                    return Ok(false);
-                }
-                return Ok(true);
+                self.send(&res).await?;
+                Ok(())
             }
-            Message::Close(_) => return Ok(false),
-            _ => return Ok(true),
-        };
-
-        // Decode the received client message
-        let req = match serde_json::from_str::<ClientMessage>(&text) {
-            Ok(value) => value,
-            Err(err) => {
-                error!("Unable to decode client message: {}", err);
-
-                self.send(&ServerResponse(ResponseMessage::Error {
-                    error: ServerError::MalformedMessage,
-                }))
-                .await?;
-
-                return Ok(true);
+            Message::Ping(ping) => {
+                self.handle_ping_message(ping).await?;
+                Ok(())
             }
-        };
-
-        self.handle_request(req).await?;
-
-        Ok(true)
+            _ => Ok(()),
+        }
     }
 
-    /// Handles processing client messages and sending the response
-    /// for the message
-    ///
-    /// # Arguments
-    /// * msg - The client message being processed
-    async fn handle_request(&mut self, msg: ClientMessage) -> Result<(), axum::Error> {
-        let result: Result<ResponseMessage, ServerError> = self.handle_client_message(msg);
+    /// Handles ping messages by responding with a pong
+    async fn handle_ping_message(&mut self, ping: Bytes) -> Result<(), axum::Error> {
+        let socket = self
+            .socket
+            .as_mut()
+            .expect("should never be able to receive a ping message without a socket first");
 
-        let msg = match result {
-            Ok(value) => value,
-            Err(error) => ResponseMessage::Error { error },
-        };
-
-        let res: ServerResponse = ServerResponse(msg);
-        self.send(&res).await
+        socket.send(Message::Pong(ping)).await
     }
 
-    /// Handle a client message and produce the server response
-    fn handle_client_message(
-        &mut self,
-        msg: ClientMessage,
-    ) -> Result<ResponseMessage, ServerError> {
-        match msg {
+    /// Handles a text base message
+    fn handle_text_message(&mut self, message: Utf8Bytes) -> Result<ResponseMessage, ServerError> {
+        let client_message = serde_json::from_str::<ClientMessage>(&message)
+            .inspect_err(|err| error!("Unable to decode client message: {}", err))
+            .map_err(|_| ServerError::MalformedMessage)?;
+
+        match client_message {
             ClientMessage::Initialize { uuid } => self.initialize(uuid),
             ClientMessage::Connect { token } => self.connect(token),
             ClientMessage::Join { name } => self.join(name),

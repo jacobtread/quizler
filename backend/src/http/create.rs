@@ -1,6 +1,5 @@
 use crate::{
-    game::config::GameConfig,
-    games::Games,
+    game::{config::GameConfig, manager::Games},
     types::{ImStr, Image, NameFiltering, Question},
 };
 use axum::{

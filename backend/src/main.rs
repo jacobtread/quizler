@@ -6,7 +6,6 @@ use std::{net::Ipv4Addr, process::exit, sync::Arc};
 use tokio::net::TcpListener;
 
 mod game;
-mod games;
 mod http;
 mod msg;
 mod session;

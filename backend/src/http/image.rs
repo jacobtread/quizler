@@ -1,4 +1,4 @@
-use crate::{games::Games, types::GameToken};
+use crate::{game::manager::Games, types::GameToken};
 use axum::{
     body::Body,
     extract::Path,

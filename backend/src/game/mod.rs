@@ -1,9 +1,9 @@
 use crate::{
     game::{
         config::GameConfig,
+        manager::Games,
         player::{GameSession, GameSessionMut},
     },
-    games::Games,
     msg::ServerEvent,
     session::{EventTarget, SessionId},
     types::{
@@ -25,6 +25,7 @@ use uuid::Uuid;
 
 mod answer;
 pub mod config;
+pub mod manager;
 pub mod player;
 
 /// Reference to a game behind an Arc and a RwLock
