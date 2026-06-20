@@ -24,7 +24,7 @@ jobs:
               with:
                   run_install: |
                       - cwd: frontend
-                        args: --frozen-lockfile
+                        args: [--frozen-lockfile]
 
             - name: Build frontend
               working-directory: frontend
