@@ -126,3 +126,10 @@ pub enum ServerEvent {
         config: Arc<GameConfig>,
     },
 }
+
+/// Trait implemented by messages that are serializable by the server
+pub trait ServerMessage: Serialize {}
+
+impl ServerMessage for ServerResponse {}
+
+impl ServerMessage for ServerEvent {}

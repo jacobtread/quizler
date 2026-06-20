@@ -3,21 +3,19 @@ use crate::{
         GameRef,
         manager::{Games, InitializedMessage},
     },
-    msg::{ClientMessage, ResponseMessage, ServerEvent, ServerResponse},
+    msg::{ClientMessage, ResponseMessage, ServerEvent, ServerMessage, ServerResponse},
     session_store::{SessionStore, SessionStoreMessage},
     types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
 };
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use bytes::Bytes;
-use futures_util::future::BoxFuture;
+use futures_util::{StreamExt, future::BoxFuture, stream::SplitStream};
 use log::{debug, error};
-use serde::Serialize;
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
 use tokio::{
-    io::Sink,
     select,
     sync::mpsc,
     time::{MissedTickBehavior, interval},
@@ -36,8 +34,8 @@ pub struct Session {
 
     /// Last heartbeat received from the client
     hb: Instant,
-    /// The socket the session is connected to
-    socket: Option<WebSocket>,
+    /// Current session socket data
+    socket: Option<SessionSocket>,
 
     /// Receiver for receiving server events
     rx: mpsc::UnboundedReceiver<Arc<ServerEvent>>,
@@ -51,6 +49,31 @@ pub struct Session {
     tx: EventTarget,
 }
 
+/// [WebSocket] that has been split into a stream and sink that is
+/// automatically fed from messages sent into `ws_tx`
+struct SessionSocket {
+    /// Sender to send messages to the websocket
+    ws_tx: mpsc::UnboundedSender<Message>,
+    /// Stream to receive messages from the websocket
+    ws_stream: SplitStream<WebSocket>,
+}
+
+impl SessionSocket {
+    fn new(socket: WebSocket) -> SessionSocket {
+        let (ws_tx, ws_rx) = mpsc::unbounded_channel::<Message>();
+        let outgoing_stream = tokio_stream::wrappers::UnboundedReceiverStream::new(ws_rx).map(Ok);
+
+        let (ws_sink, ws_stream) = socket.split();
+
+        // Forward all outgoing messages to the outgoing stream
+        tokio::spawn(async {
+            _ = outgoing_stream.forward(ws_sink).await;
+        });
+
+        SessionSocket { ws_tx, ws_stream }
+    }
+}
+
 // Time intervals to check heartbeats
 const HB_INTERVAL: Duration = Duration::from_secs(5);
 // Timeout for handling loss of connection
@@ -59,11 +82,13 @@ const TIMEOUT: Duration = Duration::from_secs(15);
 // socket connection was lost to allow resuming the session
 const SESSION_RESUME_TIMEOUT: Duration = Duration::from_secs(60 * 3);
 
+/// Accepts a message from the socket stream if the socket is available
+/// or provides a pending future
 async fn socket_recv_or_pending(
-    session_socket: Option<&mut WebSocket>,
+    session_socket: Option<&mut SessionSocket>,
 ) -> Option<Result<Message, axum::Error>> {
     match session_socket {
-        Some(socket) => socket.recv().await,
+        Some(socket) => socket.ws_stream.next().await,
         _ => std::future::pending().await,
     }
 }
@@ -76,14 +101,19 @@ impl Session {
     pub async fn start(socket: WebSocket, session_store: Arc<SessionStore>) {
         let (tx, rx) = mpsc::unbounded_channel();
         let (store_tx, store_rx) = mpsc::unbounded_channel();
+
         let id = Uuid::new_v4();
         debug!("Starting new session {}", id);
         let hb = Instant::now();
+
+        let session_socket = SessionSocket::new(socket);
+
         let mut this = Self {
             id,
             game: None,
             hb,
-            socket: Some(socket),
+            socket: Some(session_socket),
+
             rx,
             tx: EventTarget(tx),
             store_rx,
@@ -94,7 +124,7 @@ impl Session {
         let token = this.session_store.add_session(id, store_tx);
 
         // Notify the session of its resumption token
-        _ = this.send(&ServerEvent::ResumptionToken { token }).await;
+        _ = this.send(&ServerEvent::ResumptionToken { token });
 
         this.process().await;
     }
@@ -117,14 +147,14 @@ impl Session {
                         None => break,
                     };
 
-                    if self.handle_event(event).await.is_err() {
+                    if self.handle_event(event).is_err() {
                         // Failed to send the response
                         break;
                     }
                 }
 
                 // Handle socket messages if the socket is active
-                req = socket_recv_or_pending(self.socket.as_mut()) => {
+                req = socket_recv_or_pending(self.socket.as_mut()), if self.socket.is_some() => {
                     let msg: Message = match req {
                         Some(Ok(value)) => value,
                         // Error while reading body (Skip the message)
@@ -151,7 +181,7 @@ impl Session {
                         break;
                     }
 
-                    if self.handle_message(msg).await.is_err() {
+                    if self.handle_message(msg).is_err() {
                          break;
                     }
                 }
@@ -173,14 +203,15 @@ impl Session {
                     };
 
                     // We are reconnected
-                    self.socket = Some(socket);
+                    let session_socket = SessionSocket::new(socket);
+                    self.socket = Some(session_socket);
                     self.hb = Instant::now();
                     self.resume();
                 }
 
                 // Heartbeat, only if we are connected
                 _ = hb_interval.tick(), if self.socket.is_some() => {
-                    if !self.heartbeat().await {
+                    if !self.heartbeat() {
                         // Socket heartbeat has failed, consider the socket dead
                         self.socket = None;
                         resumption_timeout = Box::pin(tokio::time::sleep(SESSION_RESUME_TIMEOUT));
@@ -202,7 +233,7 @@ impl Session {
     }
 
     /// Heartbeat returns false if connection is failed
-    async fn heartbeat(&mut self) -> bool {
+    fn heartbeat(&mut self) -> bool {
         let socket = match &mut self.socket {
             Some(socket) => socket,
             _ => return false,
@@ -211,10 +242,10 @@ impl Session {
         let elapsed = self.hb.elapsed();
         if elapsed >= TIMEOUT {
             // Connection lost timeout
-            false
-        } else {
-            socket.send(Message::Ping(Bytes::new())).await.is_ok()
+            return false;
         }
+
+        socket.ws_tx.send(Message::Ping(Bytes::new())).is_ok()
     }
 
     /// Handles cleaning up the session after processing has
@@ -240,7 +271,7 @@ impl Session {
     ///
     /// # Arguments
     /// * event - The event to handle
-    async fn handle_event(&mut self, event: Arc<ServerEvent>) -> Result<(), axum::Error> {
+    fn handle_event(&mut self, event: Arc<ServerEvent>) -> Result<(), axum::Error> {
         let value = event.as_ref();
 
         // Ensure we drop our reference to the game when kicked
@@ -250,7 +281,7 @@ impl Session {
             self.game = None;
         }
 
-        self.send(value).await
+        self.send(value)
     }
 
     /// Handles processing websocket messages, updating heartbeat, and forwarding
@@ -258,7 +289,7 @@ impl Session {
     ///
     /// # Arguments
     /// * msg - The websocket message
-    async fn handle_message(&mut self, msg: Message) -> Result<(), axum::Error> {
+    fn handle_message(&mut self, msg: Message) -> Result<(), axum::Error> {
         // Update heartbeat
         self.hb = Instant::now();
 
@@ -270,11 +301,11 @@ impl Session {
                     Err(error) => ServerResponse(ResponseMessage::Error { error }),
                 };
 
-                self.send(&res).await?;
+                self.send(&res)?;
                 Ok(())
             }
             Message::Ping(ping) => {
-                self.handle_ping_message(ping).await?;
+                self.handle_ping_message(ping)?;
                 Ok(())
             }
             _ => Ok(()),
@@ -282,13 +313,14 @@ impl Session {
     }
 
     /// Handles ping messages by responding with a pong
-    async fn handle_ping_message(&mut self, ping: Bytes) -> Result<(), axum::Error> {
+    fn handle_ping_message(&mut self, ping: Bytes) -> Result<(), axum::Error> {
         let socket = self
             .socket
             .as_mut()
             .expect("should never be able to receive a ping message without a socket first");
 
-        socket.send(Message::Pong(ping)).await
+        _ = socket.ws_tx.send(Message::Pong(ping));
+        Ok(())
     }
 
     /// Handles a text base message
@@ -313,11 +345,14 @@ impl Session {
     ///
     /// # Arguments
     /// * msg - The message to send
-    async fn send<S: Serialize>(&mut self, msg: &S) -> Result<(), axum::Error> {
+    fn send<S: ServerMessage>(&mut self, msg: &S) -> Result<(), axum::Error> {
         let value = serde_json::to_string(msg).map_err(|err| axum::Error::new(Box::new(err)))?;
         let message = Message::Text(value.into());
         match &mut self.socket {
-            Some(socket) => socket.send(message).await,
+            Some(socket) => {
+                _ = socket.ws_tx.send(message);
+                Ok(())
+            }
             None => Ok(()),
         }
     }
