@@ -1,9 +1,11 @@
 use axum::extract::DefaultBodyLimit;
+use config::{Config, DEFAULT_MAX_BODY_SIZE};
 use dotenvy::dotenv;
-use log::{LevelFilter, error, info};
-use std::{net::Ipv4Addr, process::exit};
+use log::LevelFilter;
+use std::process::exit;
 use tokio::net::TcpListener;
 
+mod config;
 mod game;
 mod http;
 mod msg;
@@ -15,12 +17,10 @@ mod types;
 // Cargo package version
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const DEFAULT_MAX_BODY_SIZE: usize = 50 * 1000 * 1000;
-
 #[tokio::main]
 async fn main() {
     // Load environment variables
-    dotenv().ok();
+    _ = dotenv();
 
     // Initialize logger
     env_logger::builder()
@@ -28,23 +28,13 @@ async fn main() {
         .parse_default_env()
         .init();
 
-    let port: u16 = std::env::var("QUIZLER_PORT")
-        .map(|value| {
-            value
-                .parse::<u16>()
-                .expect("Provided QUIZLER_PORT was not a valid port")
-        })
-        .unwrap_or(80);
+    let Config {
+        host,
+        port,
+        max_body_size_byte,
+    } = Config::load();
 
-    let max_body_size_byte: usize = std::env::var("QUIZLER_MAX_BODY_SIZE_BYTES")
-        .map(|value| {
-            value
-                .parse::<usize>()
-                .expect("Provided QUIZLER_MAX_BODY_SIZE_BYTES was not a valid unsigned integer")
-        })
-        .unwrap_or(DEFAULT_MAX_BODY_SIZE); // Default max size of 50mb
-
-    info!("Starting Quizler on port {} (v{})", port, VERSION);
+    log::info!("Starting Quizler on {host}:{port} (v{VERSION})");
 
     if max_body_size_byte != DEFAULT_MAX_BODY_SIZE {
         log::debug!("custom max http body size is set = {max_body_size_byte}")
@@ -58,12 +48,10 @@ async fn main() {
         .layer(tower_http::cors::CorsLayer::very_permissive())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
-    let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, port))
-        .await
-        .unwrap();
+    let listener = TcpListener::bind((host, port)).await.unwrap();
 
     if let Err(err) = axum::serve(listener, router).await {
-        error!("Server error: {}", err);
+        log::error!("Server error: {}", err);
         exit(1);
     }
 }
