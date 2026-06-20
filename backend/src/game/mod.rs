@@ -16,6 +16,7 @@ use log::debug;
 use player::{HostSession, PlayerSession};
 use serde::Serialize;
 use std::{
+    ops::{Add, Sub},
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -44,9 +45,16 @@ pub struct Game {
     /// The index of the current question
     question_index: usize,
     /// Spawn handle for delayed tasks
-    task_handle: Option<AbortHandle>,
+    task: Option<TaskState>,
     /// Start time updated for each question
     start_time: Instant,
+}
+
+struct TaskState {
+    /// Handle to the task transition state
+    handle: AbortHandle,
+    /// The expected instant of when the task should complete
+    expected_completion_at: Instant,
 }
 
 /// Different game states
@@ -100,7 +108,7 @@ impl Game {
             config,
             state: GameState::Lobby,
             question_index: 0,
-            task_handle: None,
+            task: None,
             start_time: Instant::now(),
         }
     }
@@ -112,17 +120,23 @@ impl Game {
     /// * duration - The duration to wait before moving states
     fn timed_next_state(&mut self, duration: Duration) {
         let token = self.token;
+
+        let now = Instant::now();
+        let expected_completion_at = now.add(duration);
         let handle = tokio::spawn(async move {
             sleep(duration).await;
             let game = Games::get_game(&token);
             if let Some(game) = game {
                 let lock = &mut *game.write();
-                lock.task_handle = None;
+                lock.task = None;
                 lock.next_state();
             }
         });
 
-        self.task_handle = Some(handle.abort_handle());
+        self.task = Some(TaskState {
+            handle: handle.abort_handle(),
+            expected_completion_at,
+        });
 
         // Send timer message with the duration time
         self.send_all(ServerEvent::Timer {
@@ -203,6 +217,16 @@ impl Game {
         // Send the player the current game state
         target_addr.send_owned(ServerEvent::GameState { state: self.state });
 
+        // If a timed task is actively ongoing compute the remaining time and send
+        // it to the user
+        if let Some(task) = self.task.as_ref() {
+            let now = Instant::now();
+            let duration = task.expected_completion_at.sub(now);
+            target_addr.send_owned(ServerEvent::Timer {
+                value: duration.as_millis() as u32,
+            });
+        }
+
         match self.state {
             // Send the current question to the player for states that depend on one
             GameState::Starting
@@ -229,8 +253,8 @@ impl Game {
     /// Moves the game to the next state based on its current state
     fn next_state(&mut self) {
         // Cancel a delayed task if one is running
-        if let Some(task_handle) = self.task_handle.take() {
-            task_handle.abort();
+        if let Some(task_handle) = self.task.take() {
+            task_handle.handle.abort();
         }
 
         match self.state {
@@ -325,8 +349,8 @@ impl Game {
     /// Completely resets all the game and player state to its initial values
     fn reset_completely(&mut self) {
         // Clear the task handle if present
-        if let Some(task_handle) = self.task_handle.take() {
-            task_handle.abort();
+        if let Some(task_handle) = self.task.take() {
+            task_handle.handle.abort();
         }
 
         self.question_index = 0;
