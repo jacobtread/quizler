@@ -205,7 +205,7 @@ impl Game {
             name: session.player().as_ref().map(|player| player.name.clone()),
         }));
 
-        // Notify the player of all the other players in the game
+        // Notify the player of all the players in the game (Including themselves)
         for player in &self.players {
             target_addr.send_owned(player.introduction_event());
         }
@@ -514,6 +514,9 @@ impl Game {
             other_player.addr.send(joiner_message.clone());
             player.addr.send_owned(other_player.introduction_event());
         }
+
+        // Notify the player of themselves
+        player.addr.send(joiner_message.clone());
 
         // Notify the host of the join
         self.host.addr.send(joiner_message);
