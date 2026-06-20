@@ -44,12 +44,14 @@ pub struct Session {
     rx: mpsc::UnboundedReceiver<Arc<ServerEvent>>,
 
     /// Receiver for messages from the session store (Resumptions)
-    store_rx: mpsc::UnboundedReceiver<SessionStoreMessage>,
-    /// Access to the session store to revoke access after destruction
-    session_store: Arc<SessionStore>,
+    session_store_rx: mpsc::UnboundedReceiver<SessionStoreMessage>,
 
     /// Sender for server events
     tx: EventTarget,
+
+    /// Future for when session resumption has timed out, if the
+    /// socket is connected this future is a infinitely pending one
+    resumption_timeout: BoxFuture<'static, ()>,
 }
 
 /// [WebSocket] that has been split into a stream and sink that is
@@ -97,39 +99,43 @@ async fn socket_recv_or_pending(
 }
 
 impl Session {
-    /// Handler for starting a new session from the provided websocket
-    ///
-    /// # Arguments
-    /// * socket - The websocket to use for the session
-    pub async fn start(socket: WebSocket, session_store: Arc<SessionStore>) {
+    /// Starts a new session from the provided socket and session store
+    pub async fn start(socket: WebSocket) {
+        let (mut session, token) = Self::new(socket);
+        log::debug!("Starting new session {}", session.id);
+
+        // Notify the session of its resumption token
+        _ = session.send(&ServerEvent::ResumptionToken { token });
+
+        session.process().await;
+    }
+
+    /// Create a new session instance
+    fn new(socket: WebSocket) -> (Self, String) {
         let (tx, rx) = mpsc::unbounded_channel();
-        let (store_tx, store_rx) = mpsc::unbounded_channel();
 
         let id = Uuid::new_v4();
         let hb = Instant::now();
         let session_socket = SessionSocket::new(socket);
 
-        log::debug!("Starting new session {}", id);
+        let (session_store_tx, session_store_rx) = mpsc::unbounded_channel();
 
-        let mut this = Self {
+        // Register the message sender with the session store
+        let session_store = SessionStore::global();
+        let token = session_store.add_session(id, session_store_tx);
+
+        let this = Self {
             id,
             game: None,
             hb,
             socket: Some(session_socket),
-
             rx,
             tx: EventTarget(tx),
-            store_rx,
-            session_store,
+            session_store_rx,
+            resumption_timeout: Box::pin(std::future::pending()),
         };
 
-        // Register the message sender with the session store
-        let token = this.session_store.add_session(id, store_tx);
-
-        // Notify the session of its resumption token
-        _ = this.send(&ServerEvent::ResumptionToken { token });
-
-        this.process().await;
+        (this, token)
     }
 
     /// Handles processing all events for the session
@@ -138,18 +144,11 @@ impl Session {
         let mut hb_interval = interval(HB_INTERVAL);
         hb_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
-        // Timeout for resumption
-        let mut resumption_timeout: BoxFuture<'static, ()> = Box::pin(std::future::pending());
-
         loop {
             select! {
-                // Server events
-                event = self.rx.recv() => {
-                    let event = match event {
-                        Some(event) => event,
-                        None => break,
-                    };
-
+                // Handle incoming server events to send to the client
+                // (Impossible to get None on this branch as the session owns a copy of its sender)
+                Some(event) = self.rx.recv() => {
                     if self.handle_event(event).is_err() {
                         // Failed to send the response
                         break;
@@ -158,16 +157,19 @@ impl Session {
 
                 // Handle socket messages if the socket is active
                 req = socket_recv_or_pending(self.socket.as_mut()), if self.socket.is_some() => {
-                    let msg: Message = match req {
-                        Some(Ok(value)) => value,
-                        // Error while reading body (Skip the message)
-                        Some(Err(_)) => continue,
+                    let msg_result = match req {
+                        Some(value) => value,
                         // Socket has become closed
                         None => {
-                            self.socket = None;
-                            resumption_timeout = Box::pin(tokio::time::sleep(SESSION_RESUME_TIMEOUT));
+                            self.socket_disconnected();
                             continue;
                         },
+                    };
+
+                    let msg: Message = match msg_result {
+                        Ok(value) => value,
+                        // Error while reading body (Skip the message)
+                        Err(_) => continue,
                     };
 
                     // Close messages are handled ahead of time since they directly
@@ -190,13 +192,13 @@ impl Session {
                 }
 
                 // If we are disconnected run the resumption timeout future
-                _ = &mut resumption_timeout, if self.socket.is_none()  => {
+                _ = &mut self.resumption_timeout, if self.socket.is_none()  => {
                     log::debug!("Session connection lost and exceeded resumption window, closing: {}", self.id);
                     break;
                 }
 
                 // If we are disconnected wait for messages from the session store to handle a reconnect
-                store_msg = self.store_rx.recv(), if self.socket.is_none() => {
+                store_msg = self.session_store_rx.recv(), if self.socket.is_none() => {
                     let socket = match store_msg {
                         Some(SessionStoreMessage::Reconnect { socket }) => socket,
                         // For future variants:
@@ -206,18 +208,14 @@ impl Session {
                     };
 
                     // We are reconnected
-                    let session_socket = SessionSocket::new(socket);
-                    self.socket = Some(session_socket);
-                    self.hb = Instant::now();
-                    self.resume();
+                    self.resume(socket);
                 }
 
                 // Heartbeat, only if we are connected
                 _ = hb_interval.tick(), if self.socket.is_some() => {
                     if !self.heartbeat() {
                         // Socket heartbeat has failed, consider the socket dead
-                        self.socket = None;
-                        resumption_timeout = Box::pin(tokio::time::sleep(SESSION_RESUME_TIMEOUT));
+                        self.socket_disconnected();
                         continue;
                     }
                 }
@@ -226,9 +224,23 @@ impl Session {
         self.cleanup();
     }
 
+    /// Handles the socket disconnecting
+    fn socket_disconnected(&mut self) {
+        self.socket = None;
+        self.resumption_timeout = Box::pin(tokio::time::sleep(SESSION_RESUME_TIMEOUT));
+    }
+
+    /// Resumes the session using a new `socket` connection.
+    ///
     /// Resume all information about the session sending all the
     /// current details to the player
-    fn resume(&mut self) {
+    fn resume(&mut self, socket: WebSocket) {
+        let session_socket = SessionSocket::new(socket);
+
+        self.hb = Instant::now();
+        self.socket = Some(session_socket);
+        self.resumption_timeout = Box::pin(std::future::pending());
+
         if let Some(game) = self.game.as_ref() {
             let game = game.read();
             game.resume_player(self.id);
@@ -258,7 +270,8 @@ impl Session {
     fn cleanup(&mut self) {
         log::debug!("Session stopped: {}", self.id);
 
-        self.session_store.remove_session(self.id);
+        let session_store = SessionStore::global();
+        session_store.remove_session(self.id);
 
         // Take the game to attempt removing if present
         if let Some(game) = self.game.take() {

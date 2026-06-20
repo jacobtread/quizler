@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, LazyLock},
+};
 
 use axum::extract::ws::WebSocket;
 use base64ct::{Base64UrlUnpadded, Encoding};
@@ -10,6 +13,12 @@ use uuid::Uuid;
 use crate::{session::SessionId, signing::SigningKey};
 
 pub type SessionToken = String;
+
+/// Global instance of the session store
+static SESSION_STORE: LazyLock<SessionStore> = LazyLock::new(|| {
+    let signing_key = SigningKey::generate();
+    SessionStore::new(signing_key)
+});
 
 pub struct SessionStore {
     /// Signing key for signing resumption tokens
@@ -24,6 +33,10 @@ impl SessionStore {
             key,
             sessions: Default::default(),
         }
+    }
+
+    pub fn global() -> &'static SessionStore {
+        &SESSION_STORE
     }
 
     fn generate_session_token(&self, session_id: SessionId) -> SessionToken {

@@ -6,14 +6,14 @@ use crate::{
 use parking_lot::RwLock;
 use std::{
     collections::HashMap,
-    sync::{Arc, OnceLock},
+    sync::{Arc, LazyLock},
     time::Duration,
 };
 use tokio::{task::AbortHandle, time::sleep};
 use uuid::Uuid;
 
 /// Global instance for storing games
-static GAMES: OnceLock<RwLock<Games>> = OnceLock::new();
+static GAMES: LazyLock<RwLock<Games>> = LazyLock::new(Default::default);
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
@@ -48,8 +48,8 @@ pub struct InitializedMessage {
 impl Games {
     /// Obtains a static reference to the global
     /// games store
-    fn get() -> &'static RwLock<Games> {
-        GAMES.get_or_init(Default::default)
+    fn global() -> &'static RwLock<Games> {
+        &GAMES
     }
 
     /// Prepares a new Quiz for creation. Stores the uploaded config
@@ -62,17 +62,16 @@ impl Games {
 
         let id = Uuid::new_v4();
 
-        let mut games = Self::get().write();
-
         // Create an expiry timeout task that removes the preparing game automatically
         // unless cancelled before the expiry time
         let expiry_handle = tokio::spawn(async move {
             sleep(GAME_EXPIRY_TIME).await;
-            let mut games = Self::get().write();
+            let mut games = Self::global().write();
             games.preparing.remove(&id);
         })
         .abort_handle();
 
+        let mut games = Self::global().write();
         games.preparing.insert(
             id,
             PreparingGame {
@@ -97,25 +96,22 @@ impl Games {
         host_target: EventTarget,
     ) -> Result<InitializedMessage, ServerError> {
         // Write lock is required for updating state
-        let mut games = Self::get().write();
+        let mut games = Self::global().write();
 
         // Consume the provided prepared config
-        let PreparingGame {
-            config,
-            expiry_handle,
-        } = games
+        let prepared = games
             .preparing
             .remove(&uuid)
             .ok_or(ServerError::InvalidToken)?;
 
         // Abort the expiry task
-        expiry_handle.abort();
+        prepared.expiry_handle.abort();
 
         // Create a new game token
         let token = GameToken::unique_token(&games.games);
 
         // Create the game
-        let config = Arc::new(config);
+        let config = Arc::new(prepared.config);
         let game = Game::new(token, host_id, host_target, config.clone());
         let game = Arc::new(RwLock::new(game));
 
@@ -135,12 +131,12 @@ impl Games {
     /// # Arguments
     /// * token - The token of the game to get
     pub fn get_game(token: &GameToken) -> Option<GameRef> {
-        Self::get().read().games.get(token).cloned()
+        Self::global().read().games.get(token).cloned()
     }
 
     /// Removes the game with the provided [`GameToken`] from
     /// the map of games
     pub fn remove_game(token: GameToken) {
-        Self::get().write().games.remove(&token);
+        Self::global().write().games.remove(&token);
     }
 }

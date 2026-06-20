@@ -71,7 +71,10 @@ pub struct AnswerMessage {
     pub answer: Answer,
 }
 
-/// Message for the host to kick a player from the game
+/// Message to kick a player from the game
+///
+/// The player is also allowed to "kick" themselves
+/// to leave the game by their own choice
 #[derive(Deserialize)]
 pub struct KickMessage {
     /// The ID of the player to kick
