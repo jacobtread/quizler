@@ -17,5 +17,8 @@
     "onfinalize",
     "dndzone",
     "socketContext"
+  ],
+  "userWords": [
+    "createDataSchema"
   ]
 }

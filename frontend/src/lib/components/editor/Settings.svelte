@@ -39,8 +39,7 @@
           cols="40"
           rows="2"
           bind:value={$createData.text}
-          maxlength={constants.MAX_DESCRIPTION_LENGTH}
-        ></textarea>
+          maxlength={constants.MAX_DESCRIPTION_LENGTH}></textarea>
       </label>
     </div>
   </div>

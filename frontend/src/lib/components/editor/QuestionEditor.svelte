@@ -89,8 +89,7 @@
   cols="30"
   rows="2"
   maxlength={constants.MAX_QUESTION_LENGTH}
-  bind:value={question.text}
->
+  bind:value={question.text}>
   <!-- -->
 </textarea>
 
