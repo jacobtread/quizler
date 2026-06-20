@@ -17,7 +17,11 @@
     "onfinalize",
     "dndzone",
     "socketContext",
-    "Unpadded"
+    "Unpadded",
+    "dtolnay",
+    "msvc",
+    "softprops",
+    "Buildx"
   ],
   "userWords": [
     "createDataSchema"

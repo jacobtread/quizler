@@ -12,26 +12,26 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Frontend
-              uses: actions/checkout@v4
+              uses: actions/checkout@v7
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: "24"
 
-            - name: setup pnpm and caching
-              uses: pnpm/action-setup@v6
-
-            - name: Install dependencies
-              working-directory: frontend
-              run: pnpm install --frozen-lockfile
+            - name: setup pnpm and install dependencies
+              uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+              with:
+                  run_install: |
+                      - cwd: frontend
+                        args: [--frozen-lockfile]
 
             - name: Build frontend
               working-directory: frontend
               run: pnpm run build
 
             - name: Upload frontend artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: frontend-build
                   path: frontend/dist/
@@ -53,17 +53,19 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             - name: Download frontend artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: frontend-build
                   merge-multiple: true
                   path: backend/public/
 
             - name: Set up Rust
-              uses: dtolnay/rust-toolchain@stable
+              uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+              with:
+                  toolchain: stable
 
             - name: Build Backend
               working-directory: ./backend
@@ -74,7 +76,7 @@ jobs:
               run: cargo test --verbose
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: ${{ matrix.file_name }}
                   path: "./backend/target/debug/${{ matrix.file }}"
