@@ -3,14 +3,17 @@ use crate::{
         GameRef,
         manager::{Games, InitializedMessage},
     },
-    msg::{ClientMessage, ResponseMessage, ServerEvent, ServerMessage, ServerResponse},
+    msg::{
+        AnswerMessage, ClientMessage, ConnectMessage, HostActionMessage, InitializeMessage,
+        JoinMessage, KickMessage, ReadyMessage, ResponseMessage, ServerEvent, ServerMessage,
+        ServerResponse,
+    },
     session_store::{SessionStore, SessionStoreMessage},
-    types::{Answer, GameToken, HostAction, RemoveReason, ServerError},
+    types::{GameToken, RemoveReason, ServerError},
 };
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use bytes::Bytes;
 use futures_util::{StreamExt, future::BoxFuture, stream::SplitStream};
-use log::{debug, error};
 use std::{
     sync::Arc,
     time::{Duration, Instant},
@@ -103,10 +106,10 @@ impl Session {
         let (store_tx, store_rx) = mpsc::unbounded_channel();
 
         let id = Uuid::new_v4();
-        debug!("Starting new session {}", id);
         let hb = Instant::now();
-
         let session_socket = SessionSocket::new(socket);
+
+        log::debug!("Starting new session {}", id);
 
         let mut this = Self {
             id,
@@ -188,7 +191,7 @@ impl Session {
 
                 // If we are disconnected run the resumption timeout future
                 _ = &mut resumption_timeout, if self.socket.is_none()  => {
-                    debug!("Session connection lost and exceeded resumption window, closing: {}", self.id);
+                    log::debug!("Session connection lost and exceeded resumption window, closing: {}", self.id);
                     break;
                 }
 
@@ -253,7 +256,7 @@ impl Session {
     ///
     /// Removes the player from its game if its present
     fn cleanup(&mut self) {
-        debug!("Session stopped: {}", self.id);
+        log::debug!("Session stopped: {}", self.id);
 
         self.session_store.remove_session(self.id);
 
@@ -304,10 +307,12 @@ impl Session {
                 self.send(&res)?;
                 Ok(())
             }
+
             Message::Ping(ping) => {
                 self.handle_ping_message(ping)?;
                 Ok(())
             }
+
             _ => Ok(()),
         }
     }
@@ -320,24 +325,17 @@ impl Session {
             .expect("should never be able to receive a ping message without a socket first");
 
         _ = socket.ws_tx.send(Message::Pong(ping));
+
         Ok(())
     }
 
     /// Handles a text base message
     fn handle_text_message(&mut self, message: Utf8Bytes) -> Result<ResponseMessage, ServerError> {
         let client_message = serde_json::from_str::<ClientMessage>(&message)
-            .inspect_err(|err| error!("Unable to decode client message: {}", err))
+            .inspect_err(|err| log::error!("Unable to decode client message: {}", err))
             .map_err(|_| ServerError::MalformedMessage)?;
 
-        match client_message {
-            ClientMessage::Initialize { uuid } => self.initialize(uuid),
-            ClientMessage::Connect { token } => self.connect(token),
-            ClientMessage::Join { name } => self.join(name),
-            ClientMessage::HostAction { action } => self.host_action(action),
-            ClientMessage::Answer { answer } => self.answer(answer),
-            ClientMessage::Kick { id } => self.kick(id),
-            ClientMessage::Ready => self.ready(),
-        }
+        client_message.handle(self)
     }
 
     /// Converts the provided message to JSON writing it as a text frame
@@ -348,123 +346,126 @@ impl Session {
     fn send<S: ServerMessage>(&mut self, msg: &S) -> Result<(), axum::Error> {
         let value = serde_json::to_string(msg).map_err(|err| axum::Error::new(Box::new(err)))?;
         let message = Message::Text(value.into());
-        match &mut self.socket {
-            Some(socket) => {
-                _ = socket.ws_tx.send(message);
-                Ok(())
-            }
-            None => Ok(()),
+
+        if let Some(socket) = self.socket.as_mut() {
+            _ = socket.ws_tx.send(message);
         }
-    }
 
-    /// Handler for initialize messages to attempt to initialize a new game.
-    /// On success the game reference on this session will be updated.
-    ///
-    /// # Arguments
-    /// * uuid - The UUID of the prepared config
-    fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
-        self.disconnect();
-
-        let msg: InitializedMessage = Games::initialize(uuid, self.id, self.tx.clone())?;
-        self.game = Some(msg.game);
-
-        Ok(ResponseMessage::Joined {
-            id: self.id,
-            config: msg.config,
-            token: msg.token,
-        })
-    }
-
-    /// Handler for connect messages to attempt to connect to a game.
-    /// On success the game reference on this session will be updated.
-    ///
-    /// # Arguments
-    /// * uuid - The UUID of the prepared config
-    fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
-        self.disconnect();
-
-        let token: GameToken = token.parse()?;
-
-        let game = Games::get_game(&token).ok_or(ServerError::InvalidToken)?;
-
-        self.game = Some(game);
-        Ok(ResponseMessage::Ok)
+        Ok(())
     }
 
     /// Disconnects the session from their current game if they
     /// are already in one
     fn disconnect(&mut self) {
+        let game = match self.game.take() {
+            Some(value) => value,
+            None => return,
+        };
+
         // If already in a game inform the game that we've left
-        if let Some(game) = self.game.take() {
-            let mut lock = game.write();
-            let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
+        let mut lock = game.write();
+        let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
+    }
+}
+
+trait SessionMessageHandler {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError>;
+}
+
+impl SessionMessageHandler for ClientMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        match self {
+            ClientMessage::Initialize(msg) => msg.handle(session),
+            ClientMessage::Connect(msg) => msg.handle(session),
+            ClientMessage::Join(msg) => msg.handle(session),
+            ClientMessage::Ready(msg) => msg.handle(session),
+            ClientMessage::HostAction(msg) => msg.handle(session),
+            ClientMessage::Answer(msg) => msg.handle(session),
+            ClientMessage::Kick(msg) => msg.handle(session),
         }
     }
+}
 
-    /// Handler for join messages to attempt to join the game reference
-    /// by the session game field
-    ///
-    /// # Arguments
-    /// * name - The name to attempt to join with
-    fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
-        let msg = {
-            let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-            let mut game = game.write();
+impl SessionMessageHandler for InitializeMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        session.disconnect();
 
-            game.join(self.id, self.tx.clone(), name)
-        }?;
+        let msg: InitializedMessage = Games::initialize(self.uuid, session.id, session.tx.clone())?;
+        session.game = Some(msg.game);
 
         Ok(ResponseMessage::Joined {
-            id: self.id,
+            id: session.id,
+            config: msg.config,
+            token: msg.token,
+        })
+    }
+}
+
+impl SessionMessageHandler for ConnectMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        session.disconnect();
+
+        let token: GameToken = self.token.parse()?;
+        let game = Games::get_game(&token).ok_or(ServerError::InvalidToken)?;
+
+        session.game = Some(game);
+        Ok(ResponseMessage::Ok)
+    }
+}
+
+impl SessionMessageHandler for JoinMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        let game = session.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let mut game = game.write();
+        let msg = game.join(session.id, session.tx.clone(), self.name)?;
+
+        Ok(ResponseMessage::Joined {
+            id: session.id,
             token: msg.token,
             config: msg.config,
         })
     }
+}
 
-    /// Handler for host action messages
-    ///
-    /// # Arguments
-    /// * action - The host action to execute
-    fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
+impl SessionMessageHandler for ReadyMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        let game = session.game.as_ref().ok_or(ServerError::Unexpected)?;
         let mut game = game.write();
-
-        game.host_action(self.id, action)?;
-        Ok(ResponseMessage::Ok)
-    }
-
-    /// Handler for answer messages
-    ///
-    /// # Arguments
-    /// * answer - The player answer
-    fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write();
-
-        game.answer(self.id, answer)?;
-        Ok(ResponseMessage::Ok)
-    }
-
-    /// Handler for kick messages
-    ///
-    /// # Arguments
-    /// * target_id - The ID of the player to kick
-    fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write();
-
-        game.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
-        Ok(ResponseMessage::Ok)
-    }
-
-    /// Handler for ready messages
-    fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
-        let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write();
-        game.ready(self.id);
+        game.ready(session.id);
         Ok(ResponseMessage::Ok)
     }
 }
+
+impl SessionMessageHandler for HostActionMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        let game = session.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let mut game = game.write();
+
+        game.host_action(session.id, self.action)?;
+        Ok(ResponseMessage::Ok)
+    }
+}
+
+impl SessionMessageHandler for AnswerMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        let game = session.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let mut game = game.write();
+
+        game.answer(session.id, self.answer)?;
+        Ok(ResponseMessage::Ok)
+    }
+}
+
+impl SessionMessageHandler for KickMessage {
+    fn handle(self, session: &mut Session) -> Result<ResponseMessage, ServerError> {
+        let game = session.game.as_ref().ok_or(ServerError::Unexpected)?;
+        let mut game = game.write();
+
+        game.remove_player(session.id, self.id, RemoveReason::RemovedByHost)?;
+        Ok(ResponseMessage::Ok)
+    }
+}
+
 /// Wrapper around the session sender to allow sending server
 /// events to the sessions
 #[derive(Clone)]
