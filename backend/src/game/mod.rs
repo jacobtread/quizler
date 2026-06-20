@@ -114,7 +114,7 @@ impl Game {
         let token = self.token;
         let handle = tokio::spawn(async move {
             sleep(duration).await;
-            let game = Games::get_game(&token).await;
+            let game = Games::get_game(&token);
             if let Some(game) = game {
                 let lock = &mut *game.write().await;
                 lock.task_handle = None;
@@ -638,7 +638,7 @@ impl Game {
         }
 
         // Remove the game from the list of games
-        tokio::spawn(Games::remove_game(self.token));
+        Games::remove_game(self.token);
 
         // Tell all the players they've been kicked
         for player in &self.players {

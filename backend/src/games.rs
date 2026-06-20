@@ -15,7 +15,7 @@ use tokio::{
 use uuid::Uuid;
 
 /// Global instance for storing games
-static GAMES: OnceLock<RwLock<Games>> = OnceLock::new();
+static GAMES: OnceLock<parking_lot::RwLock<Games>> = OnceLock::new();
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
@@ -50,7 +50,7 @@ pub struct InitializedMessage {
 impl Games {
     /// Obtains a static reference to the global
     /// games store
-    fn get() -> &'static RwLock<Games> {
+    fn get() -> &'static parking_lot::RwLock<Games> {
         GAMES.get_or_init(Default::default)
     }
 
@@ -59,10 +59,6 @@ impl Games {
     pub async fn tick_cleanup() {
         /// Interval to check for expired game prepares (5mins)
         const PREPARE_CHECK_INTERVAL: Duration = Duration::from_secs(60 * 5);
-
-        /// The amount of time that must pass for a prepared game to be
-        /// considered expired (10mins)
-        const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 10);
 
         // Create the interval future
         let mut interval = interval(PREPARE_CHECK_INTERVAL);
@@ -73,12 +69,20 @@ impl Games {
             interval.tick().await;
 
             // Obtain a write lock and remove all expired games
-            let mut games = Self::get().write().await;
-            games.preparing.retain(|_, value| {
-                let elapsed = value.created.elapsed();
-                elapsed < GAME_EXPIRY_TIME
-            });
+            Self::cleanup_expires_prepares()
         }
+    }
+
+    fn cleanup_expires_prepares() {
+        /// The amount of time that must pass for a prepared game to be
+        /// considered expired (10mins)
+        const GAME_EXPIRY_TIME: Duration = Duration::from_secs(60 * 10);
+
+        let mut games = Self::get().write();
+        games.preparing.retain(|_, value| {
+            let elapsed = value.created.elapsed();
+            elapsed < GAME_EXPIRY_TIME
+        });
     }
 
     /// Prepares a new Quiz for creation. Stores the uploaded config
@@ -86,11 +90,11 @@ impl Games {
     ///
     /// # Arguments
     /// * config - The config for the quiz
-    pub async fn prepare(config: GameConfig) -> Uuid {
+    pub fn prepare(config: GameConfig) -> Uuid {
         let id = Uuid::new_v4();
         let created = Instant::now();
 
-        let mut games = Self::get().write().await;
+        let mut games = Self::get().write();
         games
             .preparing
             .insert(id, PreparingGame { config, created });
@@ -105,13 +109,13 @@ impl Games {
     /// * uuid - The UUID of the prepared config
     /// * host_id - The session ID of the host player
     /// * host_target - The event target for the host player
-    pub async fn initialize(
+    pub fn initialize(
         uuid: Uuid,
         host_id: SessionId,
         host_target: EventTarget,
     ) -> Result<InitializedMessage, ServerError> {
         // Write lock is required for updating state
-        let mut games = Self::get().write().await;
+        let mut games = Self::get().write();
 
         // Consume the provided prepared config
         let config = games
@@ -143,13 +147,13 @@ impl Games {
     ///
     /// # Arguments
     /// * token - The token of the game to get
-    pub async fn get_game(token: &GameToken) -> Option<GameRef> {
-        Self::get().read().await.games.get(token).cloned()
+    pub fn get_game(token: &GameToken) -> Option<GameRef> {
+        Self::get().read().games.get(token).cloned()
     }
 
     /// Removes the game with the provided [`GameToken`] from
     /// the map of games
-    pub async fn remove_game(token: GameToken) {
-        Self::get().write().await.games.remove(&token);
+    pub fn remove_game(token: GameToken) {
+        Self::get().write().games.remove(&token);
     }
 }

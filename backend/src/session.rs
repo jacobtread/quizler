@@ -351,7 +351,7 @@ impl Session {
     async fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
         self.disconnect().await;
 
-        let msg: InitializedMessage = Games::initialize(uuid, self.id, self.tx.clone()).await?;
+        let msg: InitializedMessage = Games::initialize(uuid, self.id, self.tx.clone())?;
         self.game = Some(msg.game);
 
         Ok(ResponseMessage::Joined {
@@ -371,9 +371,7 @@ impl Session {
 
         let token: GameToken = token.parse()?;
 
-        let game = Games::get_game(&token)
-            .await
-            .ok_or(ServerError::InvalidToken)?;
+        let game = Games::get_game(&token).ok_or(ServerError::InvalidToken)?;
 
         self.game = Some(game);
         Ok(ResponseMessage::Ok)

@@ -25,9 +25,7 @@ pub enum ImageError {
 pub async fn quiz_image(
     Path((token, uuid)): Path<(GameToken, Uuid)>,
 ) -> Result<Response, ImageError> {
-    let game = Games::get_game(&token)
-        .await
-        .ok_or(ImageError::UnknownGame)?;
+    let game = Games::get_game(&token).ok_or(ImageError::UnknownGame)?;
 
     let image = game
         .read()

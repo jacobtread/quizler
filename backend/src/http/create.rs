@@ -142,7 +142,7 @@ pub async fn create_quiz(mut payload: Multipart) -> Result<Response, CreateError
         return Err(CreateError::ValidationFailed);
     }
 
-    let uuid = Games::prepare(config).await;
+    let uuid = Games::prepare(config);
 
     debug!("Created new prepared game {}", uuid);
 
