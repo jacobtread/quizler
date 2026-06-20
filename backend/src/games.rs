@@ -3,19 +3,17 @@ use crate::{
     session::{EventTarget, SessionId},
     types::{GameToken, ServerError},
 };
+use parking_lot::RwLock;
 use std::{
     collections::HashMap,
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
-use tokio::{
-    sync::RwLock,
-    time::{MissedTickBehavior, interval},
-};
+use tokio::time::{MissedTickBehavior, interval};
 use uuid::Uuid;
 
 /// Global instance for storing games
-static GAMES: OnceLock<parking_lot::RwLock<Games>> = OnceLock::new();
+static GAMES: OnceLock<RwLock<Games>> = OnceLock::new();
 
 /// Central store for storing all the references to the individual
 /// games that are currently running
@@ -50,7 +48,7 @@ pub struct InitializedMessage {
 impl Games {
     /// Obtains a static reference to the global
     /// games store
-    fn get() -> &'static parking_lot::RwLock<Games> {
+    fn get() -> &'static RwLock<Games> {
         GAMES.get_or_init(Default::default)
     }
 

@@ -19,7 +19,7 @@ use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use tokio::{sync::RwLock, task::AbortHandle, time::sleep};
+use tokio::{task::AbortHandle, time::sleep};
 use uuid::Uuid;
 
 mod answer;
@@ -27,7 +27,7 @@ pub mod config;
 pub mod player;
 
 /// Reference to a game behind an Arc and a RwLock
-pub type GameRef = Arc<RwLock<Game>>;
+pub type GameRef = Arc<parking_lot::RwLock<Game>>;
 
 /// Represents an active quiz
 pub struct Game {
@@ -116,7 +116,7 @@ impl Game {
             sleep(duration).await;
             let game = Games::get_game(&token);
             if let Some(game) = game {
-                let lock = &mut *game.write().await;
+                let lock = &mut *game.write();
                 lock.task_handle = None;
                 lock.next_state();
             }

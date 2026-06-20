@@ -27,11 +27,11 @@ pub async fn quiz_image(
 ) -> Result<Response, ImageError> {
     let game = Games::get_game(&token).ok_or(ImageError::UnknownGame)?;
 
-    let image = game
-        .read()
-        .await
-        .get_image(uuid)
-        .ok_or(ImageError::UnknownImage)?;
+    let image = {
+        game.read()
+            .get_image(uuid)
+            .ok_or(ImageError::UnknownImage)?
+    };
 
     let mut res = Body::from(image.data).into_response();
     let content_type =

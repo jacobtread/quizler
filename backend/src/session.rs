@@ -175,8 +175,7 @@ impl Session {
                     // We are reconnected
                     self.socket = Some(socket);
                     self.hb = Instant::now();
-
-                    self.resume().await;
+                    self.resume();
                 }
 
                 // Heartbeat, only if we are connected
@@ -190,14 +189,14 @@ impl Session {
                 }
             };
         }
-        self.cleanup().await;
+        self.cleanup();
     }
 
     /// Resume all information about the session sending all the
     /// current details to the player
-    async fn resume(&mut self) {
+    fn resume(&mut self) {
         if let Some(game) = self.game.as_ref() {
-            let game = game.read().await;
+            let game = game.read();
             game.resume_player(self.id);
         }
     }
@@ -222,14 +221,14 @@ impl Session {
     /// terminated.
     ///
     /// Removes the player from its game if its present
-    async fn cleanup(&mut self) {
+    fn cleanup(&mut self) {
         debug!("Session stopped: {}", self.id);
 
         self.session_store.remove_session(self.id);
 
         // Take the game to attempt removing if present
         if let Some(game) = self.game.take() {
-            let mut lock = game.write().await;
+            let mut lock = game.write();
 
             // Inform game to remove self
             let _ = lock.remove_player(self.id, self.id, RemoveReason::LostConnection);
@@ -310,15 +309,7 @@ impl Session {
     /// # Arguments
     /// * msg - The client message being processed
     async fn handle_request(&mut self, msg: ClientMessage) -> Result<(), axum::Error> {
-        let result: Result<ResponseMessage, ServerError> = match msg {
-            ClientMessage::Initialize { uuid } => self.initialize(uuid).await,
-            ClientMessage::Connect { token } => self.connect(token).await,
-            ClientMessage::Join { name } => self.join(name).await,
-            ClientMessage::HostAction { action } => self.host_action(action).await,
-            ClientMessage::Answer { answer } => self.answer(answer).await,
-            ClientMessage::Kick { id } => self.kick(id).await,
-            ClientMessage::Ready => self.ready().await,
-        };
+        let result: Result<ResponseMessage, ServerError> = self.handle_client_message(msg);
 
         let msg = match result {
             Ok(value) => value,
@@ -327,6 +318,22 @@ impl Session {
 
         let res: ServerResponse = ServerResponse(msg);
         self.send(&res).await
+    }
+
+    /// Handle a client message and produce the server response
+    fn handle_client_message(
+        &mut self,
+        msg: ClientMessage,
+    ) -> Result<ResponseMessage, ServerError> {
+        match msg {
+            ClientMessage::Initialize { uuid } => self.initialize(uuid),
+            ClientMessage::Connect { token } => self.connect(token),
+            ClientMessage::Join { name } => self.join(name),
+            ClientMessage::HostAction { action } => self.host_action(action),
+            ClientMessage::Answer { answer } => self.answer(answer),
+            ClientMessage::Kick { id } => self.kick(id),
+            ClientMessage::Ready => self.ready(),
+        }
     }
 
     /// Converts the provided message to JSON writing it as a text frame
@@ -348,8 +355,8 @@ impl Session {
     ///
     /// # Arguments
     /// * uuid - The UUID of the prepared config
-    async fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
-        self.disconnect().await;
+    fn initialize(&mut self, uuid: Uuid) -> Result<ResponseMessage, ServerError> {
+        self.disconnect();
 
         let msg: InitializedMessage = Games::initialize(uuid, self.id, self.tx.clone())?;
         self.game = Some(msg.game);
@@ -366,8 +373,8 @@ impl Session {
     ///
     /// # Arguments
     /// * uuid - The UUID of the prepared config
-    async fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
-        self.disconnect().await;
+    fn connect(&mut self, token: String) -> Result<ResponseMessage, ServerError> {
+        self.disconnect();
 
         let token: GameToken = token.parse()?;
 
@@ -379,10 +386,10 @@ impl Session {
 
     /// Disconnects the session from their current game if they
     /// are already in one
-    async fn disconnect(&mut self) {
+    fn disconnect(&mut self) {
         // If already in a game inform the game that we've left
         if let Some(game) = self.game.take() {
-            let mut lock = game.write().await;
+            let mut lock = game.write();
             let _ = lock.remove_player(self.id, self.id, RemoveReason::Disconnected);
         }
     }
@@ -392,10 +399,10 @@ impl Session {
     ///
     /// # Arguments
     /// * name - The name to attempt to join with
-    async fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
+    fn join(&mut self, name: String) -> Result<ResponseMessage, ServerError> {
         let msg = {
             let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-            let mut game = game.write().await;
+            let mut game = game.write();
 
             game.join(self.id, self.tx.clone(), name)
         }?;
@@ -411,9 +418,9 @@ impl Session {
     ///
     /// # Arguments
     /// * action - The host action to execute
-    async fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
+    fn host_action(&mut self, action: HostAction) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write().await;
+        let mut game = game.write();
 
         game.host_action(self.id, action)?;
         Ok(ResponseMessage::Ok)
@@ -423,9 +430,9 @@ impl Session {
     ///
     /// # Arguments
     /// * answer - The player answer
-    async fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
+    fn answer(&mut self, answer: Answer) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write().await;
+        let mut game = game.write();
 
         game.answer(self.id, answer)?;
         Ok(ResponseMessage::Ok)
@@ -435,19 +442,18 @@ impl Session {
     ///
     /// # Arguments
     /// * target_id - The ID of the player to kick
-    async fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
+    fn kick(&mut self, target_id: SessionId) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write().await;
+        let mut game = game.write();
 
         game.remove_player(self.id, target_id, RemoveReason::RemovedByHost)?;
         Ok(ResponseMessage::Ok)
     }
 
     /// Handler for ready messages
-    async fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
+    fn ready(&mut self) -> Result<ResponseMessage, ServerError> {
         let game = self.game.as_ref().ok_or(ServerError::Unexpected)?;
-        let mut game = game.write().await;
-
+        let mut game = game.write();
         game.ready(self.id);
         Ok(ResponseMessage::Ok)
     }
