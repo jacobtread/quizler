@@ -64,9 +64,9 @@ The following tags are available with each image release:
 - **Name Filtering**: Maintain a positive environment by customizing the level of filtering for player usernames on a per-quiz basis.
 - **Image Fitting**: Adapt quiz images for various devices with options like Cover, Contain, Fit Width, and Fit Height.
 - **Customization Options**:
-    - Adjust time limits for answering questions.
-    - Set min, max, and bonus scores for each question.
-    - Support for different question types: Single, Multiple, True/False, and Typer.
+  - Adjust time limits for answering questions.
+  - Set min, max, and bonus scores for each question.
+  - Support for different question types: Single, Multiple, True/False, and Typer.
 - **Easy Shuffling**: Quickly rearrange the order of questions and answers for variety.
 - **Readiness and Preloading**: Ensure fairness by waiting for all players to preload images before starting question timers.
 - **Fully Portable**: No files are persisted, making Quizler completely portable as a single executable. Quizzes can be exported/imported as self-contained .quizler files.
@@ -103,24 +103,24 @@ Building Quizler requires NodeJS (>=22) for the frontend and Cargo/Rust (>=1.93.
 
 1. **Frontend**:
 
-    ```shell
-    # Move to the frontend directory
-    cd frontend
-    # Install dependencies
-    npm install
-    # Run the dist commands
-    npm run dist
-    # Move out of the frontend directory
-    cd ..
-    ```
+   ```shell
+   # Move to the frontend directory
+   cd frontend
+   # Install dependencies
+   pnpm install
+   # Run the dist commands
+   pnpm run dist
+   # Move out of the frontend directory
+   cd ..
+   ```
 
 2. **Backend**:
-    ```shell
-    # Move to the backend directory
-    cd backend
-    # Build the release binary
-    cargo build --release
-    ```
+   ```shell
+   # Move to the backend directory
+   cd backend
+   # Build the release binary
+   cargo build --release
+   ```
 
 After building the backend, find the binary at `backend/target/release/quizler[.exe]`.
 
