@@ -178,7 +178,11 @@ impl Session {
                         // In debug close triggers resumption logic to allow testing
                         // session resumption
                         #[cfg(debug_assertions)]
-                        continue;
+                        {
+                            self.socket_disconnected();
+                            continue;
+                        }
+
 
                         // In real world situations a close is treated as the end
                         // of the connection
@@ -235,6 +239,8 @@ impl Session {
     /// Resume all information about the session sending all the
     /// current details to the player
     fn resume(&mut self, socket: WebSocket) {
+        log::debug!("resumed session with new socket {}", self.id);
+
         let session_socket = SessionSocket::new(socket);
 
         self.hb = Instant::now();

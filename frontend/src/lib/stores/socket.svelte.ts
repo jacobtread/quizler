@@ -59,6 +59,18 @@ export interface SocketStore {
   send<T extends ClientMessage>(
     msg: ClientMessageOf<T>
   ): Promise<ServerResponseOf<T>>;
+
+  /**
+   * Cleanup function, closes the socket and removes
+   * all handlers
+   */
+  cleanup(): void;
+
+  /**
+   * Recreate the socket if it was cleaned up previously
+   * (Reconnect the socket if not already)
+   */
+  recreate(): void;
 }
 
 interface TypedHandlerWithAbort<K extends ServerEvent> {
@@ -68,6 +80,7 @@ interface TypedHandlerWithAbort<K extends ServerEvent> {
 
 export function createSocketState(appState: AppStateStore): SocketStore {
   let ready = $state(false);
+  let stopped = false;
 
   // Token for resuming the connection
   let resumptionToken: string | null =
@@ -79,10 +92,8 @@ export function createSocketState(appState: AppStateStore): SocketStore {
   let messageQueue: ServerMessage[] = [];
 
   // Currently set message handlers for handling messages
-  const messageHandlers: Partial<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Record<ServerEvent, TypedHandlerWithAbort<any>>
-  > = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, svelte/prefer-svelte-reactivity
+  const messageHandlers = new Map<ServerEvent, TypedHandlerWithAbort<any>>();
 
   // Reference to the socket
   let socket: WebSocket = createSocket();
@@ -160,6 +171,10 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
     // Return to the home screen
     appState.setHome();
+
+    // Don't queue reconnect if this socket was cleaned up
+    if (stopped) return;
+
     // Attempt to reconnect
     queueReconnect();
   }
@@ -241,7 +256,7 @@ export function createSocketState(appState: AppStateStore): SocketStore {
     }
 
     // Find the handler for the message
-    const entry = messageHandlers[msg.ty];
+    const entry = messageHandlers.get(msg.ty);
     if (entry !== undefined && (!entry.abort || !entry.abort.aborted)) {
       const handler = entry.handler as ServerEventHandler<unknown>;
       // Call the handler with the message
@@ -258,7 +273,7 @@ export function createSocketState(appState: AppStateStore): SocketStore {
     handler: ServerEventHandler<T>,
     abort?: AbortSignal
   ) {
-    messageHandlers[ty] = { handler, abort };
+    messageHandlers.set(ty, { handler, abort });
     console.debug("Added handler for", ty);
 
     // Process matching queued messages
@@ -276,7 +291,7 @@ export function createSocketState(appState: AppStateStore): SocketStore {
 
     const destructor = () => {
       if (destroyed) return;
-      delete messageHandlers[ty];
+      messageHandlers.delete(ty);
       destroyed = true;
     };
 
@@ -290,11 +305,26 @@ export function createSocketState(appState: AppStateStore): SocketStore {
     sessionStorage.setItem("resumptionToken", resumptionToken);
   });
 
+  function cleanup() {
+    stopped = true;
+    socket.close();
+    messageQueue = [];
+    messageHandlers.clear();
+  }
+
+  function recreate() {
+    if (!stopped) return;
+    stopped = false;
+    queueReconnect();
+  }
+
   return {
     get ready() {
       return ready;
     },
     setHandler,
-    send
+    send,
+    cleanup,
+    recreate
   };
 }

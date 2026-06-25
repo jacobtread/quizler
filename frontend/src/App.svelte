@@ -22,6 +22,8 @@
   socketContext.set(socket);
 
   onMount(() => {
+    socket.recreate();
+
     const abortController = new AbortController();
     const abortSignal = abortController.signal;
 
@@ -38,6 +40,7 @@
 
     return () => {
       abortController.abort();
+      socket.cleanup();
     };
   });
 </script>

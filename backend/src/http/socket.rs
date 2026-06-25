@@ -27,6 +27,7 @@ pub async fn quiz_socket(Query(query): Query<SocketQuery>, ws: WebSocketUpgrade)
             && let Ok(session_id) = session_store.verify_session_token(&resume)
             && let Some(session_tx) = session_store.get_session_tx(session_id)
         {
+            log::debug!("attempting session reconnect {session_id}");
             match session_tx.send(SessionStoreMessage::Reconnect { socket }) {
                 // Session was resumed we can return early
                 Ok(_) => return,
