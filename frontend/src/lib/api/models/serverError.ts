@@ -17,7 +17,8 @@ export const enum ServerError {
 // Messages for different server errors
 export const errorText: Record<ServerError, string> = {
   [ServerError.MalformedMessage]: "Unknown client sent invalid message",
-  [ServerError.InvalidToken]: "Invalid token provided",
+  [ServerError.InvalidToken]:
+    "Invalid game code provided, check that you have entered the game code correctly",
   [ServerError.InvalidNameLength]: "Invalid name length",
   [ServerError.UsernameTaken]: "Username already in use",
   [ServerError.InappropriateName]:
