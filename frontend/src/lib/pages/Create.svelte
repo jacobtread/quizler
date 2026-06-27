@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tweened, type Tweened } from "svelte/motion";
+  import { Tween } from "svelte/motion";
   import {
     ClientMessage,
     errorText,
@@ -39,7 +39,7 @@
 
   let loading: boolean = $state(false);
   let loadingState: string = $state("");
-  let progress: Tweened<number> = tweened(0);
+  const progress: Tween<number> = new Tween(0);
   let settings: boolean = $state(false);
 
   async function doExport() {
@@ -226,7 +226,7 @@
 
 {#if loading}
   {#if loadingState === "Uploading"}
-    <FloatingLoader text={`Uploading ${$progress.toFixed(0)}%`} />
+    <FloatingLoader text={`Uploading ${progress.current.toFixed(0)}%`} />
   {:else}
     <FloatingLoader text="Connecting..." />
   {/if}
