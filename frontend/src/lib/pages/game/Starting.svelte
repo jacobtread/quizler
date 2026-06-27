@@ -80,7 +80,7 @@
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: var(--starting-start-shadow-dark);
+    color: var(--starting-start-text);
   }
 
   .bottom {

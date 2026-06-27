@@ -63,7 +63,7 @@
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: var(--partial-start-text-shadow-darkest);
+    color: var(--partial-start-text);
   }
 
   .bottom {
