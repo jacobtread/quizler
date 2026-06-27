@@ -1,4 +1,3 @@
-nodeVersion: "24"
 packages:
     - frontend
 allowBuilds:
