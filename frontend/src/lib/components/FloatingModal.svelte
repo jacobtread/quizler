@@ -42,9 +42,7 @@
   </div>
 {/if}
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .floating-wrapper {
     z-index: 1;
     position: fixed;
@@ -61,8 +59,8 @@
   }
 
   .dialog {
-    background-color: scheme.$appBackground;
-    border: 1px solid scheme.$surface;
+    background-color: var(--app-background);
+    border: 1px solid var(--surface);
 
     border-radius: 0.5rem;
 
@@ -75,10 +73,10 @@
     display: flex;
     flex-flow: column;
     gap: 1rem;
+  }
 
-    &--small {
-      max-width: 32rem;
-    }
+  .dialog--small {
+    max-width: 32rem;
   }
 
   @media screen and (max-width: 48rem), (max-height: 48em) {

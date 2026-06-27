@@ -97,9 +97,7 @@
 <QuestionSettings bind:question bind:visible={settings} />
 <QuestionTypeSelect bind:question bind:visible={type} />
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .actions {
     margin-bottom: 0.5rem;
     display: flex;
@@ -108,13 +106,13 @@
 
   .qt {
     padding: 0.5rem;
+  }
 
-    &__type {
-      background-color: scheme.$surfaceLight;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      margin-left: 0.5rem;
-    }
+  .qt__type {
+    background-color: var(--surface-light);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-left: 0.5rem;
   }
 
   .text {
@@ -129,19 +127,17 @@
 
     padding: 0.5rem;
     border: none;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     border-radius: 0.25rem;
     margin-top: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
-    color: scheme.$textDefault;
+    color: var(--text-default);
   }
 
   @media screen and (max-width: 64rem) {
-    .actions {
-      .btn {
-        flex: auto;
-      }
+    .actions .btn {
+      flex: auto;
     }
   }
 

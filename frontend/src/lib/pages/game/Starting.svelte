@@ -52,10 +52,7 @@
   </div>
 </main>
 
-<style lang="scss">
-  @use "sass:color";
-  @use "../../../assets/scheme.scss";
-
+<style>
   .quiz {
     display: flex;
     flex-flow: column;
@@ -67,8 +64,8 @@
     padding: 1rem;
     background: linear-gradient(
       to bottom right,
-      scheme.$startingStart,
-      scheme.$startingEnd
+      var(--starting-start),
+      var(--starting-end)
     );
   }
 
@@ -76,25 +73,24 @@
     font-size: 5rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px
-      color.adjust($color: scheme.$startingStart, $lightness: -25%);
+    text-shadow: 0 3px 1px var(--starting-start-shadow);
   }
 
   .text {
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: color.adjust($color: scheme.$startingStart, $lightness: 32%);
+    color: var(--starting-start-shadow-dark);
   }
 
   .bottom {
     width: 100%;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     padding: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 5px solid scheme.$surfaceLight;
+    border-top: 5px solid var(--surface-light);
     padding-left: 1rem;
     gap: 1rem;
   }

@@ -46,10 +46,7 @@
   </div>
 </main>
 
-<style lang="scss">
-  @use "sass:color";
-  @use "../../assets/scheme.scss";
-
+<style>
   .left {
     text-align: center;
   }
@@ -69,8 +66,8 @@
     justify-content: center;
     align-items: center;
     overflow: auto;
-    background-color: scheme.$appBackground;
-    background-image: scheme.$appBackgroundPattern;
+    background-color: var(--app-background);
+    background-image: var(--app-background-pattern);
 
     gap: 3rem;
     height: 100%;
@@ -79,7 +76,7 @@
   .logo :global(> svg) {
     max-width: 16rem;
     padding: 1rem;
-    fill: scheme.$logoFill;
+    fill: var(--logo-fill);
   }
 
   .action {
@@ -96,8 +93,8 @@
 
     border-radius: 1rem;
 
-    background-color: scheme.$surface;
-    border: 0.15rem solid scheme.$btnBorderColor;
+    background-color: var(--surface);
+    border: 0.15rem solid var(--btn-border-color);
     text-align: left;
 
     z-index: 2;
@@ -107,59 +104,59 @@
     transition:
       background-color 0.5s ease,
       color 0.2s linear;
+  }
 
-    :global(> svg) {
-      float: left;
-      margin-right: 1rem;
-      padding: 1rem;
-      box-sizing: content-box;
-      background-color: scheme.$surfaceLight;
-      border-radius: 0.5rem;
-      transition:
-        background-color 0.5s ease,
-        color 0.2s linear;
-    }
+  .action :global(> svg) {
+    float: left;
+    margin-right: 1rem;
+    padding: 1rem;
+    box-sizing: content-box;
+    background-color: var(--surface-light);
+    border-radius: 0.5rem;
+    transition:
+      background-color 0.5s ease,
+      color 0.2s linear;
+  }
 
-    &__name {
-      font-size: 1.4rem;
-      margin-bottom: 0.25rem;
-      color: scheme.$textPrimary;
-    }
+  .action__name {
+    font-size: 1.4rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+  }
 
-    &__text {
-      color: scheme.$textSecondary;
-      font-size: 1.1rem;
-    }
+  .action__text {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+  }
 
-    &:before {
-      content: "";
+  .action:before {
+    content: "";
 
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
 
-      background: scheme.$primaryDark;
-      border-radius: 1rem;
+    background: var(--primary-dark);
+    border-radius: 1rem;
 
-      transform: translate(-100%);
+    transform: translate(-100%);
 
-      transition: 0.5s ease;
-    }
+    transition: 0.5s ease;
+  }
 
-    &:hover {
-      &:before {
-        transform: translate(0);
-      }
+  .action:hover {
+    border-color: var(--primary);
+  }
 
-      border-color: scheme.$primary;
+  .action:hover:before {
+    transform: translate(0);
+  }
 
-      :global(> svg) {
-        background-color: scheme.$primary;
-      }
-    }
+  .action:hover :global(> svg) {
+    background-color: var(--primary);
   }
 
   @media screen and (max-height: 48rem) and (max-width: 52rem) {
@@ -203,10 +200,10 @@
       overflow: hidden;
       padding: 0 1rem;
       margin: 0 auto;
+    }
 
-      :global(> svg) {
-        width: 100%;
-      }
+    .logo :global(> svg) {
+      width: 100%;
     }
 
     .actions {
@@ -216,17 +213,17 @@
 
     .action {
       width: auto;
+    }
 
-      :global(> svg) {
-        padding: 1rem;
-        width: auto;
-        margin-bottom: 0;
-        margin-right: 0;
-      }
+    .action__body {
+      display: none;
+    }
 
-      &__body {
-        display: none;
-      }
+    .action :global(> svg) {
+      padding: 1rem;
+      width: auto;
+      margin-bottom: 0;
+      margin-right: 0;
     }
 
     .github {

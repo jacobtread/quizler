@@ -62,9 +62,7 @@
   </div>
 {/if}
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .image-wrapper {
     width: 100%;
     height: 3rem;
@@ -75,29 +73,29 @@
     justify-content: center;
     align-items: center;
 
-    border: 1px solid scheme.$surfaceLight;
+    border: 1px solid var(--surface-light);
     border-radius: 0.25rem;
   }
 
   .question {
     position: relative;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     padding: 0.5rem;
     border-radius: 0.25rem;
     display: flex;
     flex-flow: column;
     gap: 0.5rem;
     width: 12rem;
+  }
 
-    &__index {
-      display: inline;
-      background-color: scheme.$surface;
+  .question__index {
+    display: inline;
+    background-color: var(--surface);
 
-      color: scheme.$textPrimary;
+    color: var(--text-primary);
 
-      font-weight: bold;
-      margin-right: 0.25rem;
-    }
+    font-weight: bold;
+    margin-right: 0.25rem;
   }
 
   .text {
@@ -119,18 +117,18 @@
   .answer {
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: scheme.$surfaceLight;
+    background-color: var(--surface-light);
     transition: background-color 0.1s linear;
+  }
 
-    &:nth-child(odd):last-child {
-      grid-column-start: 1;
-      grid-column-end: 3;
-    }
+  .answer:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
 
-    &[data-correct="true"] {
-      background-color: scheme.$primary;
-      color: scheme.$textPrimary;
-    }
+  .answer[data-correct="true"] {
+    background-color: var(--primary);
+    color: var(--text-primary);
   }
 
   .shadow {
@@ -140,7 +138,7 @@
     right: 0;
     bottom: 0;
     visibility: visible;
-    border: 2px dashed scheme.$surfaceLight;
+    border: 2px dashed var(--surface-light);
     border-radius: 0.25rem;
     margin: 0;
   }

@@ -2,14 +2,12 @@
   <!--  -->
 </div>
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .spin {
     width: 4rem;
     height: 4rem;
     display: block;
-    border: 5px solid scheme.$spinnerFill;
+    border: 5px solid var(--spinner-fill);
     border-radius: 2rem;
     border-top-color: transparent;
     animation: spin 2s linear infinite;

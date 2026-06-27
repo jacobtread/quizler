@@ -232,19 +232,17 @@
   {/if}
 {/if}
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .editor__none {
     display: flex;
     flex-flow: column;
     justify-content: center;
     align-items: center;
     flex: auto;
+  }
 
-    h1 {
-      color: scheme.$textPrimary;
-    }
+  .editor__none h1 {
+    color: var(--text-primary);
   }
 
   .main {

@@ -14,7 +14,7 @@
   <p class="text">{text}</p>
 </main>
 
-<style lang="scss">
+<style>
   .text {
     margin-top: 1rem;
   }

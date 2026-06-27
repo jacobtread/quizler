@@ -184,11 +184,9 @@
   </div>
 {/if}
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .error {
-    color: scheme.$textError;
+    color: var(--text-error);
   }
 
   .wrapper {
@@ -209,8 +207,8 @@
   }
 
   .dialog {
-    background-color: scheme.$appBackground;
-    border: 1px solid scheme.$surface;
+    background-color: var(--app-background);
+    border: 1px solid var(--surface);
 
     padding: 1rem;
     border-radius: 0.5rem;
@@ -228,58 +226,58 @@
 
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
 
     height: 60vh;
 
     overflow: auto;
     margin-bottom: 1rem;
     position: relative;
+  }
 
-    &__text {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      max-width: 30%;
-      text-align: center;
-      transform: translate(-50%, -50%);
-    }
+  .images__text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: 30%;
+    text-align: center;
+    transform: translate(-50%, -50%);
   }
 
   .image-wrapper {
     width: 100%;
     height: 80px;
     position: relative;
-    border: 1px solid scheme.$surface;
-    background-color: scheme.$surfaceLight;
+    border: 1px solid var(--surface);
+    background-color: var(--surface-light);
   }
 
   .file {
-    border: 1px solid scheme.$surfaceLight;
-    background-color: scheme.$appBackground;
+    border: 1px solid var(--surface-light);
+    background-color: var(--app-background);
 
     padding: 0.5rem;
     border-radius: 0.25rem;
+  }
 
-    &__name {
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
-      color: scheme.$textPrimary;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-    }
+  .file__name {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
 
-    &__actions {
-      display: flex;
-      flex-flow: column;
-      gap: 0.5rem;
-    }
+  .file__actions {
+    display: flex;
+    flex-flow: column;
+    gap: 0.5rem;
+  }
 
-    &__progress {
-      padding: 0.5rem;
-      text-align: center;
-    }
+  .file__progress {
+    padding: 0.5rem;
+    text-align: center;
   }
 
   .actions {

@@ -75,27 +75,25 @@
   </button>
 </div>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .qw {
     border-radius: 0.25rem;
     position: relative;
-    border: 2px solid scheme.$surface;
+    border: 2px solid var(--surface);
+  }
 
-    &:hover {
-      border-color: scheme.$surfaceLightest;
-    }
+  .qw:hover {
+    border-color: var(--surface-lightest);
+  }
 
-    &--active,
-    &--active:hover {
-      border-color: scheme.$primary;
-    }
+  .qw--active,
+  .qw--active:hover {
+    border-color: var(--primary);
+  }
 
-    &:focus {
-      outline: 2px solid scheme.$outlineFill;
-      outline-offset: 4px;
-    }
+  .qw:focus {
+    outline: 2px solid var(--outline-fill);
+    outline-offset: 4px;
   }
 
   .list {
@@ -111,7 +109,7 @@
     padding: 0.75rem;
     overflow: auto;
     flex: auto;
-    border: 0.1rem solid scheme.$surfaceLight;
+    border: 0.1rem solid var(--surface-light);
     border-radius: 0.5rem;
 
     display: flex;

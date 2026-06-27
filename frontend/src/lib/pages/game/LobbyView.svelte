@@ -88,9 +88,7 @@
   </div>
 </main>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .page {
     padding: 1rem;
   }
@@ -106,25 +104,25 @@
 
   .player {
     position: relative;
-    background-color: scheme.$surface;
-    border: 1px solid scheme.$surfaceLight;
+    background-color: var(--surface);
+    border: 1px solid var(--surface-light);
+  }
 
-    &__name {
-      width: 100%;
-      padding: 1rem;
-    }
+  .player__name {
+    width: 100%;
+    padding: 1rem;
+  }
 
-    &__action {
-      padding: 0.5rem;
-      display: flex;
-      flex-flow: row;
-      justify-content: center;
-      border: none;
-    }
+  .player__action {
+    padding: 0.5rem;
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
+    border: none;
   }
 
   .token {
-    color: scheme.$primary;
+    color: var(--primary);
     font-weight: bold;
     font-size: 3rem;
     margin: 0;

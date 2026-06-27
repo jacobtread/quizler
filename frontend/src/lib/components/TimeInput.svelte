@@ -73,16 +73,14 @@
   </select>
 </div>
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .select,
   .time-input {
     padding: 0.5rem;
     border-radius: 0.25rem;
     font-size: 1rem;
-    background-color: scheme.$btnSurfaceBackground;
-    color: scheme.$btnText;
+    background-color: var(--btn-surface-background);
+    color: var(--btn-text);
     border: none;
   }
 

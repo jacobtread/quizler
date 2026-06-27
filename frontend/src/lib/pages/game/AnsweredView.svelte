@@ -10,10 +10,7 @@
   <p class="text">{message}</p>
 </main>
 
-<style lang="scss">
-  @use "sass:color";
-  @use "../../../assets/scheme.scss";
-
+<style>
   .main {
     width: 100%;
     height: 100%;
@@ -23,8 +20,8 @@
     align-items: center;
     background: linear-gradient(
       to bottom right,
-      scheme.$primary,
-      scheme.$secondary
+      var(--primary),
+      var(--secondary)
     );
   }
 
@@ -32,15 +29,13 @@
     font-size: 3rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px
-      color.adjust($color: scheme.$primary, $lightness: -15%);
+    text-shadow: 0 3px 1px var(--primary-shadow);
   }
 
   .text {
     font-size: 1.25rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px
-      color.adjust($color: scheme.$primary, $lightness: -15%);
+    text-shadow: 0 3px 1px var(--primary-shadow);
   }
 </style>

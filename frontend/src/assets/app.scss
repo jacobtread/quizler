@@ -6,6 +6,58 @@
   font-weight: 400;
 
   color-scheme: light dark;
+
+  --app-background: scheme.$appBackground;
+  --app-background-pattern: scheme.$appBackgroundPattern;
+
+  --logo-fill: scheme.$logoFill;
+
+  --primary: scheme.$primary;
+  --primary-shadow: scheme.$primaryShadow;
+  --primary-dark: scheme.$primaryDark;
+  --primary-lighter: scheme.$primaryLighter;
+  --secondary: scheme.$secondary;
+
+  --surface: scheme.$surface;
+  --surface-light: scheme.$surfaceLight;
+  --surface-lighter: scheme.$surfaceLighter;
+  --surface-lightest: scheme.$surfaceLightest;
+
+  --text-primary: scheme.$textPrimary;
+  --text-default: scheme.$textDefault;
+  --text-error: scheme.$textError;
+  --text-hint: scheme.$textHint;
+
+  --starting-start: scheme.$startingStart;
+  --starting-start-shadow: scheme.$startingStartShadow;
+  --starting-start-shadow-dark: scheme.$startingStartShadowDark;
+  --starting-end: scheme.$startingEnd;
+
+  --correct-start: scheme.$correctStart;
+  --correct-end: scheme.$correctEnd;
+  --correct-end-text-shadow: scheme.$correctEndTextShadow;
+
+  --partial-start: scheme.$partialStart;
+  --partial-start-text-shadow: scheme.$partialStartTextShadow;
+  --partial-start-text-shadow-dark: scheme.$partialStartTextShadowDark;
+  --partial-start-text-shadow-darkest: scheme.$partialStartTextShadowDarkest;
+  --partial-end: scheme.$partialEnd;
+
+  --incorrect-start: scheme.$incorrectStart;
+  --incorrect-end: scheme.$incorrectEnd;
+  --incorrect-end-text-shadow: scheme.$incorrectEndTextShadow;
+
+  --btn-text: scheme.$btnText;
+  --btn-icon-fill: scheme.$btnIconFill;
+  --btn-surface-background: scheme.$btnSurfaceBackground;
+  --btn-surface-disabled: scheme.$btnSurfaceDisabled;
+  --btn-border-color: scheme.$btnBorderColor;
+
+  --spinner-fill: scheme.$spinnerFill;
+
+  --dialog-title: scheme.$dialogTitle;
+
+  --outline-fill: scheme.$outlineFill;
 }
 
 * {

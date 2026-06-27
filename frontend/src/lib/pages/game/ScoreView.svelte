@@ -38,9 +38,7 @@
   {/if}
 </main>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .text {
     color: #fff;
     text-shadow: 0 1px 2px #000;
@@ -65,70 +63,68 @@
     align-items: center;
     background: linear-gradient(
       to bottom right,
-      scheme.$primary,
-      scheme.$secondary
+      var(--primary),
+      var(--secondary)
     );
-
-    .title,
-    .text {
-      text-shadow: 0 3px 1px scheme.$primaryShadow;
-    }
-  }
-
-  .main[data-type="Correct"] {
-    background: linear-gradient(
-      to bottom right,
-      scheme.$correctStart,
-      scheme.$correctEnd
-    );
-
-    .title {
-      text-shadow: 0 3px 1px scheme.$correctEndTextShadow;
-    }
-
-    .text {
-      text-shadow: 0 2px 1px scheme.$correctEndTextShadow;
-    }
-  }
-
-  .main[data-type="Partial"] {
-    background: linear-gradient(
-      to bottom right,
-      scheme.$partialStart,
-      scheme.$partialEnd
-    );
-
-    .title {
-      text-shadow: 0 3px 1px scheme.$partialStartTextShadow;
-    }
-
-    .text {
-      text-shadow: 0 2px 1px scheme.$partialStartTextShadow;
-    }
-  }
-
-  .main[data-type="Incorrect"] {
-    background: linear-gradient(
-      to bottom right,
-      scheme.$incorrectStart,
-      scheme.$incorrectEnd
-    );
-
-    .title {
-      text-shadow: 0 3px 1px scheme.$incorrectEndTextShadow;
-    }
-    .text {
-      text-shadow: 0 2px 1px scheme.$incorrectEndTextShadow;
-    }
   }
 
   .title {
     font-size: 3rem;
     color: #fff;
+    text-shadow: 0 3px 1px var(--primary-shadow);
   }
 
   .text {
     font-size: 1.25rem;
     color: #fff;
+    text-shadow: 0 3px 1px var(--primary-shadow);
+  }
+
+  .main[data-type="Correct"] {
+    background: linear-gradient(
+      to bottom right,
+      var(--correct-start),
+      var(--correct-end)
+    );
+  }
+
+  .main[data-type="Correct"] .title {
+    text-shadow: 0 3px 1px var(--correct-end-text-shadow);
+  }
+
+  .main[data-type="Correct"] .text {
+    text-shadow: 0 2px 1px var(--correct-end-text-shadow);
+  }
+
+  .main[data-type="Partial"] {
+    background: linear-gradient(
+      to bottom right,
+      var(--partial-start),
+      var(--partial-end)
+    );
+  }
+
+  .main[data-type="Partial"] .title {
+    text-shadow: 0 3px 1px var(--partial-start-text-shadow);
+  }
+
+  .main[data-type="Partial"] .text {
+    text-shadow: 0 2px 1px var(--partial-start-text-shadow);
+  }
+
+  .main[data-type="Incorrect"] {
+    background: linear-gradient(
+      to bottom right,
+      var(--incorrect-start),
+      var(--incorrect-end)
+    );
+  }
+
+  .main[data-type="Incorrect"] .title {
+    text-shadow: 0 3px 1px var(--incorrect-end-text-shadow);
+  }
+
+  .main[data-type="Incorrect"] .text {
+    text-shadow: 0 2px 1px var(--incorrect-end-text-shadow);
   }
 </style>

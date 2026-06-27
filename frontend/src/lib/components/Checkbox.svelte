@@ -22,56 +22,54 @@
   </svg>
 </label>
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .checkbox {
     display: inline-block;
 
-    background-color: scheme.$btnSurfaceBackground;
+    background-color: var(--btn-surface-background);
 
     width: 2rem;
     height: 2rem;
 
     border-radius: 0.25rem;
     transition: transform 0.15s ease;
+  }
 
-    &:active {
-      transform: scale(1.1);
-    }
+  .checkbox:active {
+    transform: scale(1.1);
+  }
 
-    &:focus-within {
-      outline: 2px solid scheme.$outlineFill;
-    }
+  .checkbox:focus-within {
+    outline: 2px solid var(--outline-fill);
+  }
 
-    &__value {
-      position: absolute;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      height: 1px;
-      width: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
+  .checkbox__value {
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    width: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+  }
 
-      &:checked ~ .checkbox__mark {
-        opacity: 1;
-        transform: translateY(0);
-        fill: scheme.$btnIconFill;
-      }
-    }
+  .checkbox__value:checked ~ .checkbox__mark {
+    opacity: 1;
+    transform: translateY(0);
+    fill: var(--btn-icon-fill);
+  }
 
-    &__mark {
-      display: block;
-      width: 1rem;
-      height: 1rem;
-      margin: 0.5rem;
+  .checkbox__mark {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    margin: 0.5rem;
 
-      transition:
-        opacity 0.15s ease,
-        transform 0.15s ease;
-      opacity: 0;
-      transform: translateY(15px);
-    }
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+    opacity: 0;
+    transform: translateY(15px);
   }
 </style>

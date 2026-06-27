@@ -35,10 +35,7 @@
   </div>
 </main>
 
-<style lang="scss">
-  @use "sass:color";
-  @use "../../../assets/scheme.scss";
-
+<style>
   .quiz {
     display: flex;
     flex-flow: column;
@@ -50,8 +47,8 @@
     padding: 1rem;
     background: linear-gradient(
       to bottom right,
-      scheme.$partialStart,
-      scheme.$partialEnd
+      var(--partial-start),
+      var(--partial-end)
     );
   }
 
@@ -59,25 +56,24 @@
     font-size: 3rem;
 
     color: #fff;
-    text-shadow: 0 3px 1px
-      color.adjust($color: scheme.$partialStart, $lightness: -25%);
+    text-shadow: 0 3px 1px var(--partial-start-text-shadow-dark);
   }
 
   .text {
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: color.adjust($color: scheme.$partialStart, $lightness: 32%);
+    color: var(--partial-start-text-shadow-darkest);
   }
 
   .bottom {
     width: 100%;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     padding: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 5px solid scheme.$surfaceLight;
+    border-top: 5px solid var(--surface-light);
     padding-left: 1rem;
   }
 

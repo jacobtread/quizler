@@ -34,35 +34,32 @@
   </div>
 {/if}
 
-<style lang="scss">
-  @use "../../assets/scheme.scss";
-
+<style>
   .dialog {
-    background-color: scheme.$appBackground;
-    border: 1px solid scheme.$surface;
+    background-color: var(--app-background);
+    border: 1px solid var(--surface);
 
     padding: 1rem;
     border-radius: 0.5rem;
     max-width: 32rem;
     width: 100%;
     margin: 1rem;
+  }
 
-    &__title {
-      margin-bottom: 0.5rem;
-      color: scheme.$dialogTitle;
-    }
+  .dialog__title {
+    margin-bottom: 0.5rem;
+    color: var(--dialog-title);
+  }
 
-    &__msg {
-      margin-bottom: 0.25rem;
-    }
+  .dialog__msg {
+    margin-bottom: 0.25rem;
+  }
 
-    &__msgs {
-      display: flex;
-      flex-flow: column;
-      // gap: 0.25rem?;
-      max-height: 24rem;
-      overflow: auto;
-      margin-bottom: 1rem;
-    }
+  .dialog__msgs {
+    display: flex;
+    flex-flow: column;
+    max-height: 24rem;
+    overflow: auto;
+    margin-bottom: 1rem;
   }
 </style>

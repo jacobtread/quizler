@@ -69,9 +69,7 @@
 <!-- Image store access for rendering the image picker -->
 <ImageStorage />
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .settings {
     position: absolute;
     right: 0.5rem;
@@ -85,7 +83,7 @@
     position: relative;
     margin-bottom: 1rem;
 
-    border: 1px solid scheme.$surfaceLight;
+    border: 1px solid var(--surface-light);
     border-radius: 0.5rem;
   }
 
@@ -106,7 +104,7 @@
     background-color: transparent;
     border: none;
     border-radius: 0.5rem;
-    color: scheme.$textDefault;
+    color: var(--text-default);
   }
 
   .overlay {
@@ -118,14 +116,14 @@
     height: 100%;
     transition: opacity 0.15s ease;
     font-size: 1rem;
-    background-color: rgba($color: #000000, $alpha: 0.7);
+    background-color: rgba(0, 0, 0, 0.7);
     border: none;
     opacity: 0;
     border-radius: 0.5rem;
+  }
 
-    &:hover,
-    &:focus {
-      opacity: 1;
-    }
+  .overlay:hover,
+  .overlay:focus {
+    opacity: 1;
   }
 </style>

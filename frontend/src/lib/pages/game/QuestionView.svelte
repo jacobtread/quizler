@@ -175,17 +175,15 @@
   </div>
 </main>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .bottom {
     width: 100%;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 5px solid scheme.$surfaceLight;
+    border-top: 5px solid var(--surface-light);
   }
 
   .token {
@@ -206,7 +204,7 @@
   }
 
   .time {
-    color: scheme.$primary;
+    color: var(--primary);
     font-weight: bold;
     font-size: 2rem;
   }
@@ -225,10 +223,10 @@
 
   .image-wrapper ~ .content {
     flex: none;
+  }
 
-    .text {
-      margin-top: 0;
-    }
+  .image-wrapper ~ .content .text {
+    margin-top: 0;
   }
 
   .content {
@@ -236,8 +234,8 @@
     margin-bottom: 0;
     display: flex;
     flex-flow: column;
-    background-color: scheme.$appBackground;
-    border: 2px solid scheme.$surface;
+    background-color: var(--app-background);
+    border: 2px solid var(--surface);
     border-radius: 0.5rem;
     margin: 0 1rem;
 
@@ -255,29 +253,29 @@
   .answer {
     padding: 1rem;
     word-wrap: break-word;
+  }
 
-    &:nth-child(odd):last-child {
-      grid-column-start: 1;
-      grid-column-end: 3;
-    }
+  .answer:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-    &--checked {
-      background-color: scheme.$primary;
+  .answer[data-host="true"]:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+  }
 
-      &:hover {
-        background-color: scheme.$primary;
-      }
-    }
+  .answer:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
 
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+  .answer--checked {
+    background-color: var(--primary);
+  }
 
-    &[data-host="true"]:disabled {
-      opacity: 1;
-      cursor: not-allowed;
-    }
+  .answer--checked:hover {
+    background-color: var(--primary);
   }
 
   .submit {

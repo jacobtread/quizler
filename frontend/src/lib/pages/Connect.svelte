@@ -206,9 +206,7 @@
   </main>
 {/if}
 
-<style lang="scss">
-  @use "../../assets/scheme";
-
+<style>
   .page {
     gap: 1rem;
     min-height: 100vh;
@@ -229,21 +227,21 @@
     max-width: 15rem;
     text-align: center;
     background-color: transparent;
-    border: 5px solid scheme.$surface;
-    color: scheme.$textPrimary;
+    border: 5px solid var(--surface);
+    color: var(--text-primary);
     border-radius: 0.5rem;
     outline: none;
     transition: 0.5s ease;
     letter-spacing: 0.25rem;
     vertical-align: middle;
+  }
 
-    &:focus {
-      border-bottom-color: scheme.$primary;
-    }
+  .special-input:focus {
+    border-bottom-color: var(--primary);
+  }
 
-    &--small {
-      font-size: 2rem;
-    }
+  .special-input--small {
+    font-size: 2rem;
   }
 
   .play {
@@ -253,20 +251,20 @@
     border-radius: 1rem;
     border: none;
     cursor: pointer;
-    color: scheme.$textPrimary;
-    background-color: scheme.$primary;
+    color: var(--text-primary);
+    background-color: var(--primary);
+  }
 
-    &--small {
-      padding-inline-start: 0.6rem;
-    }
+  .play--small {
+    padding-inline-start: 0.6rem;
   }
 
   .back {
-    border: 0.1rem solid scheme.$btnBorderColor;
+    border: 0.1rem solid var(--btn-border-color);
+  }
 
-    :global(> svg) {
-      fill: scheme.$textPrimary;
-    }
+  .back :global(> svg) {
+    fill: var(--text-primary);
   }
 
   @media screen and (max-width: 32rem) {

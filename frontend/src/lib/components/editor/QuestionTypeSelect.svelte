@@ -129,9 +129,7 @@
   {/if}
 </FloatingModal>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .row {
     display: flex;
     flex-flow: row;
@@ -147,37 +145,37 @@
 
   .type {
     text-align: left;
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     border: none;
     padding: 1rem;
-    border: 1px solid scheme.$surfaceLight;
+    border: 1px solid var(--surface-light);
     border-radius: 0.25rem;
     transition: border-color 0.25s ease;
     cursor: pointer;
+  }
 
-    &--selected {
-      border-color: scheme.$primary;
-    }
+  .type--selected {
+    border-color: var(--primary);
+  }
 
-    &:hover {
-      border-color: scheme.$surfaceLighter;
-    }
+  .type:hover {
+    border-color: var(--surface-lighter);
+  }
 
-    &--selected:hover {
-      border-color: scheme.$primaryLighter;
-    }
+  .type--selected:hover {
+    border-color: var(--primary-lighter);
+  }
 
-    &__name {
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: scheme.$textPrimary;
-      margin-bottom: 0.25rem;
-    }
+  .type__name {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
 
-    &__desc {
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
-    }
+  .type__desc {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
   }
 
   .answers {
@@ -192,18 +190,18 @@
   .answer {
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: scheme.$surfaceLight;
+    background-color: var(--surface-light);
     transition: background-color 0.1s linear;
+  }
 
-    &:nth-child(odd):last-child {
-      grid-column-start: 1;
-      grid-column-end: 3;
-    }
+  .answer:nth-child(odd):last-child {
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
 
-    &--correct {
-      background-color: scheme.$primary;
-      color: scheme.$textPrimary;
-    }
+  .answer--correct {
+    background-color: var(--primary);
+    color: var(--text-primary);
   }
 
   @media screen and (max-width: 36rem) {

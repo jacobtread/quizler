@@ -152,15 +152,13 @@
   </div>
 {/if}
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .hidden {
     display: none;
   }
 
   .answers {
-    // overflow: hidden;
+    /* overflow: hidden; */
     padding: 0.25rem;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -168,15 +166,15 @@
   }
 
   .delete {
-    background-color: scheme.$btnSurfaceBackground;
+    background-color: var(--btn-surface-background);
+  }
 
-    &:disabled {
-      background-color: scheme.$btnSurfaceDisabled;
-    }
+  .delete:disabled {
+    background-color: var(--btn-surface-disabled);
   }
 
   .answer {
-    background-color: scheme.$surface;
+    background-color: var(--surface);
     padding: 0.5rem 1rem;
     gap: 1rem;
     border-radius: 0.5rem;
@@ -184,40 +182,40 @@
     display: flex;
     align-items: stretch;
     line-height: 1;
+  }
 
-    &--selected {
-      outline: 2px solid scheme.$primary;
-    }
+  .answer--selected {
+    outline: 2px solid var(--primary);
+  }
 
-    &__check {
-      align-self: center;
-    }
+  .answer__check {
+    align-self: center;
+  }
 
-    &__input {
-      display: block;
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      background-color: scheme.$surfaceLight;
-      border-radius: 0.25rem;
-      font-size: 1rem;
-      color: scheme.$textPrimary;
-    }
+  .answer__input {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    background-color: var(--surface-light);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
 
-    &--bool {
-      font-weight: bold;
-      font-size: 2rem;
-      text-align: center;
-      padding: 0.5rem;
-    }
+  .answer--bool {
+    font-weight: bold;
+    font-size: 2rem;
+    text-align: center;
+    padding: 0.5rem;
+  }
 
-    &__text {
-      display: block;
-      width: 100%;
-      padding: 0.5rem;
-      border-radius: 0.25rem;
-      font-size: 1.25rem;
-    }
+  .answer__text {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 1.25rem;
   }
 
   .add:nth-child(odd):last-child {

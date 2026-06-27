@@ -75,11 +75,9 @@
   </div>
 </FloatingModal>
 
-<style lang="scss">
-  @use "../../../assets/scheme.scss";
-
+<style>
   .optional {
-    color: scheme.$textHint;
+    color: var(--text-hint);
     margin-left: 0.5rem;
   }
 
