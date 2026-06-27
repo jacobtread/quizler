@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { tweened } from "svelte/motion";
+  import { Tween } from "svelte/motion";
 
   import { ScoreType, type Score } from "$api/models";
   import { getRandomMessage } from "$lib/utils/messages";
@@ -12,30 +12,33 @@
   let { score }: Props = $props();
 
   const message: string = $derived(getRandomMessage(score.ty));
-  const value = tweened(0, {
-    delay: 500
-  });
 
-  $effect(() => {
-    if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
-      value.set(score.value);
+  const value = Tween.of(
+    () => {
+      if (score.ty === ScoreType.Correct || score.ty === ScoreType.Partial) {
+        return score.value;
+      }
+
+      return 0;
+    },
+    {
+      delay: 500
     }
-  });
+  );
 </script>
 
 <main class="main" data-type={score.ty} transition:slide|global>
   <h1 class="title">{score.ty}</h1>
   <p class="text">{message}</p>
   {#if score.ty === ScoreType.Correct}
-    <p class="score">+{$value.toFixed(0)}</p>
+    <p class="score">+{value.current.toFixed(0)}</p>
   {:else if score.ty === ScoreType.Partial}
     <p class="ratio">{score.count} / {score.total}</p>
-    <p class="score">+{$value.toFixed(0)}</p>
+    <p class="score">+{value.current.toFixed(0)}</p>
   {/if}
 </main>
 
 <style lang="scss">
-  @use "sass:color";
   @use "../../../assets/scheme.scss";
 
   .text {
@@ -68,8 +71,7 @@
 
     .title,
     .text {
-      text-shadow: 0 3px 1px
-        color.adjust($color: scheme.$primary, $lightness: -15%);
+      text-shadow: 0 3px 1px scheme.$primaryShadow;
     }
   }
 
@@ -81,13 +83,11 @@
     );
 
     .title {
-      text-shadow: 0 3px 1px
-        color.adjust($color: scheme.$correctEnd, $lightness: -5%);
+      text-shadow: 0 3px 1px scheme.$correctEndTextShadow;
     }
 
     .text {
-      text-shadow: 0 2px 1px
-        color.adjust($color: scheme.$correctEnd, $lightness: -5%);
+      text-shadow: 0 2px 1px scheme.$correctEndTextShadow;
     }
   }
 
@@ -99,13 +99,11 @@
     );
 
     .title {
-      text-shadow: 0 3px 1px
-        color.adjust($color: scheme.$partialStart, $lightness: -15%);
+      text-shadow: 0 3px 1px scheme.$partialStartTextShadow;
     }
 
     .text {
-      text-shadow: 0 2px 1px
-        color.adjust($color: scheme.$partialStart, $lightness: -15%);
+      text-shadow: 0 2px 1px scheme.$partialStartTextShadow;
     }
   }
 
@@ -117,12 +115,10 @@
     );
 
     .title {
-      text-shadow: 0 3px 1px
-        color.adjust($color: scheme.$incorrectEnd, $lightness: -5%);
+      text-shadow: 0 3px 1px scheme.$incorrectEndTextShadow;
     }
     .text {
-      text-shadow: 0 2px 1px
-        color.adjust($color: scheme.$incorrectEnd, $lightness: -5%);
+      text-shadow: 0 2px 1px scheme.$incorrectEndTextShadow;
     }
   }
 

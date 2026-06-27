@@ -53,10 +53,10 @@
 
   let { gameData }: Props = $props();
 
-  const timerStore = createTimerStore();
-
   const appState = stateContext.get();
   const socket = socketContext.get();
+
+  const timerStore = createTimerStore();
 
   // Player data loaded over the network
   let remotePlayerData: PlayerData[] = $state([]);
