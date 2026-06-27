@@ -14,18 +14,34 @@ $surfaceLightDisabled: #292929;
 $textDefault: #e3e3e3;
 
 $primary: #f66828;
+$primaryShadow: color.adjust(
+  $color: $primary,
+  $lightness: -15%
+);
 $primaryDark: #552e1c;
 $primaryLighter: #ff8046;
 $secondary: #f35f5f;
 
 $incorrectStart: #f35f5f;
 $incorrectEnd: #933030;
+$incorrectEndTextShadow: color.adjust(
+  $color: $incorrectEnd,
+  $lightness: -5%
+);
 
 $partialStart: #734790;
+$partialStartTextShadow: color.adjust(
+  $color: $partialStart,
+  $lightness: -15%
+);
 $partialEnd: #49295e;
 
 $correctStart: #80ff80;
 $correctEnd: #359235;
+$correctEndTextShadow: color.adjust(
+  $color: $correctEnd,
+  $lightness: -5%
+);
 
 $textPrimary: #ffffff;
 $textSecondary: #cccccc;
