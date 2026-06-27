@@ -12,16 +12,24 @@
   import { formatTime } from "$lib/utils/utils";
   import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
   import socketContext from "$lib/context/socket";
+  import type { TimerStore } from "$lib/stores/timerStore.svelte";
 
   interface Props {
     gameData: GameData;
-    timeMs: number;
+    timerStore: TimerStore;
     question: Question;
     answered: boolean;
   }
 
-  let { gameData, timeMs, question, answered = $bindable() }: Props = $props();
+  let {
+    gameData,
+    timerStore,
+    question,
+    answered = $bindable()
+  }: Props = $props();
+
   const socket = socketContext.get();
+  const timeMs = $derived(timerStore.current);
 
   let answers: number[] = $state([]);
   let typerAnswer: string = $state("");

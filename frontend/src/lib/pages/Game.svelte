@@ -45,12 +45,15 @@
   import stateContext from "$lib/context/state";
   import socketContext from "$lib/context/socket";
   import { onMount } from "svelte";
+  import { createTimerStore } from "$lib/stores/timerStore.svelte";
 
   interface Props {
     gameData: GameData;
   }
 
   let { gameData }: Props = $props();
+
+  const timerStore = createTimerStore();
 
   const appState = stateContext.get();
   const socket = socketContext.get();
@@ -69,9 +72,6 @@
   let scores: Scores = $state({});
 
   let answered: boolean = $state(false);
-
-  let timeMs: number = $state(0);
-  let lastUpdateTime: number = 0;
 
   // Fallback player list to use before remote players are loaded
   const defaultPlayers = $derived(
@@ -94,25 +94,6 @@
 
     return playersWithScore;
   });
-
-  function updateTimer() {
-    // Don't update the timer if we have reached the time
-    if (timeMs <= 0) return;
-
-    const time = performance.now();
-
-    const elapsed = time - lastUpdateTime;
-
-    timeMs -= elapsed;
-    if (timeMs < 0) timeMs = 0;
-
-    lastUpdateTime = time;
-
-    if (timeMs != 0) {
-      // Request the next animation frame
-      requestAnimationFrame(updateTimer);
-    }
-  }
 
   onMount(() => {
     const abortController = new AbortController();
@@ -153,11 +134,7 @@
       ServerEvent.Timer,
       (msg) => {
         console.debug("Time sync message", msg);
-
-        lastUpdateTime = performance.now();
-        timeMs = msg.value;
-
-        updateTimer();
+        timerStore.start(msg.value);
       },
       abortSignal
     );
@@ -234,6 +211,7 @@
 
     return () => {
       abortController.abort();
+      timerStore.reset();
     };
   });
 </script>
@@ -241,10 +219,10 @@
 {#if gameState === GameState.Finished && summary != null}
   <FinishedView {gameData} {summary} />
 {:else if gameState === GameState.Starting || gameState === GameState.PreQuestion || gameState === GameState.AwaitingReady}
-  <Starting {gameState} {gameData} {timeMs} />
+  <Starting {gameState} {gameData} {timerStore} />
 {:else if gameState === GameState.AwaitingAnswers && question != null}
   {#if !answered}
-    <QuestionView {gameData} {question} {timeMs} bind:answered />
+    <QuestionView {gameData} {question} {timerStore} bind:answered />
   {:else if players.length !== 1}
     <!--
       Don't bother showing answered screen if only one player

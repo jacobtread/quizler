@@ -7,16 +7,18 @@
   import type { GameData } from "$pages/Game.svelte";
   import { formatTime } from "$lib/utils/utils";
   import socketContext from "$lib/context/socket";
+  import type { TimerStore } from "$lib/stores/timerStore.svelte";
 
   interface Props {
     gameState: GameState;
-    timeMs: number;
     gameData: GameData;
+    timerStore: TimerStore;
   }
 
-  const { gameState, timeMs, gameData }: Props = $props();
+  const { gameState, timerStore, gameData }: Props = $props();
 
   const socket = socketContext.get();
+  const timeMs = $derived(timerStore.current);
 
   // Sends the next state action
   const next = () => doHostAction(socket, HostAction.Next);
