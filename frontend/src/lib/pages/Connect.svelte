@@ -10,12 +10,12 @@
   import { ClientMessage, ServerError, errorText } from "$api/models";
 
   import FloatingLoader from "$components/FloatingLoader.svelte";
-  import Back from "$assets/icons/back.svg?component";
   import Play from "$assets/icons/play.svg?component";
 
   import { errorDialog } from "$stores/dialogStore";
   import stateContext from "$lib/context/state";
   import socketContext from "$lib/context/socket";
+  import FloatingBackButton from "$lib/components/FloatingBackButton.svelte";
 
   const State = {
     Connect: 0,
@@ -144,9 +144,7 @@
   <FloatingLoader />
 {/if}
 
-<button onclick={back} class="back back--floating">
-  <Back />
-</button>
+<FloatingBackButton onClick={back} />
 
 {#if connectState === State.Connect}
   <main class="page page--center page--overflow" transition:slide|global>
@@ -257,11 +255,6 @@
 
   .play--small {
     padding-inline-start: 0.6rem;
-  }
-
-  .back {
-    border: 0.1rem solid var(--btn-border-color);
-    color: var(--text-primary);
   }
 
   @media screen and (max-width: 32rem) {

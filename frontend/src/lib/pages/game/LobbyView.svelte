@@ -42,9 +42,12 @@
     <p class="desc">{gameData.config.text}</p>
 
     <div class="btn-row btn-row--fill actions">
-      <button class="btn" onclick={() => leave(socketState, appState, gameData)}
-        >Leave</button
+      <button
+        class="btn"
+        onclick={() => leave(socketState, appState, gameData)}
       >
+        Leave
+      </button>
 
       {#if gameState === GameState.Marked}
         <!-- Cancel started button for starting games -->

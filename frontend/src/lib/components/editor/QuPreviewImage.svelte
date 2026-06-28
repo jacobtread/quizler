@@ -14,54 +14,69 @@
 
   let { uuid = null, preloaded = null, fit }: Props = $props();
 
-  // Preview image URL for loaded images
-  let previewImage: string | null = $state(null);
-
-  // Handling for images that need to be loaded from the preview store
-  $effect(() => {
+  const src = $derived.by(() => {
+    // Handle displaying image previews by UUID from the preview store
     if (uuid !== null) {
-      // Handle displaying image previews
       let imagePreview = $imagePreviewStore[uuid];
-      if (imagePreview !== undefined) {
-        previewImage = imagePreview;
-      } else {
-        previewImage = null;
-      }
+      return imagePreview ?? null;
     }
+
+    // Handle displaying preloaded images
+    // (The src is already loaded, decoded, and cached in browser memory this image loads instantly)
+    if (preloaded !== null) {
+      return preloaded.src;
+    }
+
+    return null;
   });
-
-  /**
-   * Handles appending the provided preloaded image HTML
-   * element as a child for an image wrapper target element
-   *
-   * @param target The element to append to
-   * @param image The preview image element
-   */
-  function preloadChild(target: HTMLElement, image: HTMLImageElement) {
-    // Prepare the preloaded image HTML element classes
-    if (!image.classList.contains("qu-image")) {
-      image.classList.add("qu-image");
-    }
-
-    // Setup attributes and alt info
-    image.setAttribute("data-fit", fit);
-    image.alt = "Uploaded Context";
-
-    target.appendChild(image);
-  }
 </script>
 
-{#if previewImage !== null}
-  <div class="qu-image-wrapper">
-    <img
-      class="qu-image"
-      data-fit={fit}
-      src={previewImage}
-      alt="Uploaded Content"
-    />
-  </div>
-{:else if preloaded != null}
-  <div class="qu-image-wrapper" use:preloadChild={preloaded}>
-    <!--  -->
-  </div>
-{/if}
+<div class="qu-image-wrapper">
+  {#if src !== null}
+    <img class="qu-image" data-fit={fit} {src} alt="Uploaded Content" />
+  {/if}
+</div>
+
+<style>
+  /* Wrapper for custom sized images */
+  .qu-image-wrapper {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+  }
+
+  .qu-image {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    aspect-ratio: auto;
+  }
+
+  /* Fit for width */
+  .qu-image[data-fit="Width"] {
+    width: 100%;
+  }
+
+  /* Fit for height */
+  .qu-image[data-fit="Height"] {
+    height: 100%;
+  }
+
+  /* Fit for containing whole image */
+  .qu-image[data-fit="Contain"] {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  /* Fit for covering available space */
+  .qu-image[data-fit="Cover"] {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+</style>
