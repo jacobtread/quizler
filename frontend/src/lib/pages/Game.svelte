@@ -30,8 +30,6 @@
     ClientMessage
   } from "$api/models";
 
-  import { preloadImage } from "$api/http";
-
   import { errorDialog } from "$stores/dialogStore";
 
   import AnsweredView from "$pages/game/AnsweredView.svelte";
@@ -46,6 +44,7 @@
   import socketContext from "$lib/context/socket";
   import { onMount } from "svelte";
   import { createTimerStore } from "$lib/stores/timerStore.svelte";
+  import { preloadImage } from "$lib/api/http";
 
   interface Props {
     gameData: GameData;
@@ -94,6 +93,31 @@
 
     return playersWithScore;
   });
+
+  async function preloadQuestionImage() {
+    if (!question) return;
+    // Preload the image
+    const preloadedImage = await preloadImage(gameData.token, question);
+
+    if (preloadedImage !== null && question.image !== null) {
+      // Ensure browser compatibility
+      if (preloadedImage.decode !== undefined) {
+        await preloadedImage.decode();
+      }
+
+      question.image.preloaded = preloadedImage;
+    }
+  }
+
+  async function markReady() {
+    // Update the ready state
+    try {
+      await socket.send({ ty: ClientMessage.Ready });
+      console.debug("Server acknowledged ready state");
+    } catch (e) {
+      console.error("Error while attempting to ready", e);
+    }
+  }
 
   onMount(() => {
     const abortController = new AbortController();
@@ -145,25 +169,8 @@
         console.debug("Question message", msg);
         question = msg.question;
 
-        // Preload the image
-        const preloadedImage = await preloadImage(gameData.token, question);
-
-        if (preloadedImage !== null && question.image !== null) {
-          // Ensure browser compatibility
-          if (preloadedImage.decode !== undefined) {
-            await preloadedImage.decode();
-          }
-
-          question.image.preloaded = preloadedImage;
-        }
-
-        // Update the ready state
-        try {
-          await socket.send({ ty: ClientMessage.Ready });
-          console.debug("Server acknowledged ready state");
-        } catch (e) {
-          console.error("Error while attempting to ready", e);
-        }
+        await preloadQuestionImage();
+        await markReady();
       },
       abortSignal
     );
