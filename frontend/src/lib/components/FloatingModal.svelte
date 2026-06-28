@@ -9,7 +9,7 @@
 
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
-  import Close from "$components/icons/Delete.svelte";
+  import Close from "$assets/icons/delete.svg?component";
   import type { Snippet } from "svelte";
 
   interface Props {

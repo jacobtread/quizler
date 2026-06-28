@@ -6,7 +6,7 @@
   import { doHostAction, leave } from "$api/actions";
 
   import ScoreTweened from "$components/TweenedValue.svelte";
-  import Crown from "$components/icons/Crown.svelte";
+  import Crown from "$assets/icons/crown.svg?component";
 
   import type { GameData } from "$pages/Game.svelte";
 
@@ -112,7 +112,7 @@
     padding: 1rem;
   }
 
-  .crown > :global(svg) {
+  .crown {
     position: absolute;
     width: 3rem;
     left: 0;

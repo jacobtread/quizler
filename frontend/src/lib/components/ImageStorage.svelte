@@ -10,7 +10,7 @@
     imagePreviewStore
   } from "$stores/imageStore";
   import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
-  import Import from "$components/icons/Import.svelte";
+  import Import from "$assets/icons/import.svg?component";
   import { acceptUploadMany } from "$lib/utils/file";
   import { formatBytes } from "$lib/utils/utils";
   import { ImageFit } from "$api/models";

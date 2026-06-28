@@ -11,10 +11,10 @@
   import QuestionTypeSelect from "$components/editor/QuestionTypeSelect.svelte";
   import EditorAnswers from "$components/editor/EditorAnswers.svelte";
   import ImageEditor from "$components/editor/ImageEditor.svelte";
-  import Shuffle from "$components/icons/Shuffle.svelte";
-  import Delete from "$components/icons/Delete.svelte";
-  import Swap from "$components/icons/Swap.svelte";
-  import Cog from "$components/icons/Cog.svelte";
+  import Shuffle from "$assets/icons/shuffle.svg?component";
+  import Delete from "$assets/icons/delete.svg?component";
+  import Swap from "$assets/icons/swap.svg?component";
+  import Cog from "$assets/icons/cog.svg?component";
 
   import { removeQuestion } from "$stores/createStore";
   import { confirmDialog } from "$stores/dialogStore";

@@ -14,11 +14,11 @@
   import QuestionList from "$components/editor/QuestionList.svelte";
   import FloatingLoader from "$components/FloatingLoader.svelte";
   import Settings from "$components/editor/Settings.svelte";
-  import Import from "$components/icons/Import.svelte";
-  import Back from "$components/icons/Back.svelte";
-  import Play from "$components/icons/Play.svelte";
-  import Export from "$components/icons/Export.svelte";
-  import Cog from "$components/icons/Cog.svelte";
+  import Import from "$assets/icons/import.svg?component";
+  import Back from "$assets/icons/back.svg?component";
+  import Play from "$assets/icons/play.svg?component";
+  import Export from "$assets/icons/export.svg?component";
+  import Cog from "$assets/icons/cog.svg?component";
 
   import { loadQuizBlob, createQuizBlob } from "$lib/utils/format";
   import { acceptUpload, startDownload } from "$lib/utils/file";

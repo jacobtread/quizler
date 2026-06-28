@@ -5,7 +5,7 @@
   import FloatingModal, { ModelSize } from "$components/FloatingModal.svelte";
   import QuPreviewImage from "$components/editor/QuPreviewImage.svelte";
   import ImageStorage from "$components/ImageStorage.svelte";
-  import Cog from "$components/icons/Cog.svelte";
+  import Cog from "$assets/icons/cog.svg?component";
 
   interface Props {
     question: Question;

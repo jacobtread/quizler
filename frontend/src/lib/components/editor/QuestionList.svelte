@@ -7,8 +7,8 @@
   import * as constants from "$lib/constants";
 
   import QuestionListItem from "$lib/components/editor/QuestionListItem.svelte";
-  import Add from "$components/icons/Add.svelte";
-  import Shuffle from "$components/icons/Shuffle.svelte";
+  import Add from "$assets/icons/add.svg?component";
+  import Shuffle from "$assets/icons/shuffle.svg?component";
 
   import {
     createData,

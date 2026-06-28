@@ -2,7 +2,7 @@
   import { QuestionType, type Question } from "$api/models";
 
   import { flip } from "svelte/animate";
-  import Image from "../icons/Image.svelte";
+  import Image from "$assets/icons/image.svg?component";
   import { SHADOW_ITEM_MARKER_PROPERTY_NAME } from "svelte-dnd-action";
   import QuPreviewImage from "./QuPreviewImage.svelte";
 
@@ -75,6 +75,8 @@
 
     border: 1px solid var(--surface-light);
     border-radius: 0.25rem;
+
+    color: #666666;
   }
 
   .question {

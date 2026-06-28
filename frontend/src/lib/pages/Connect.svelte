@@ -10,8 +10,8 @@
   import { ClientMessage, ServerError, errorText } from "$api/models";
 
   import FloatingLoader from "$components/FloatingLoader.svelte";
-  import Back from "$components/icons/Back.svelte";
-  import Play from "$components/icons/Play.svelte";
+  import Back from "$assets/icons/back.svg?component";
+  import Play from "$assets/icons/play.svg?component";
 
   import { errorDialog } from "$stores/dialogStore";
   import stateContext from "$lib/context/state";
@@ -261,10 +261,7 @@
 
   .back {
     border: 0.1rem solid var(--btn-border-color);
-  }
-
-  .back :global(> svg) {
-    fill: var(--text-primary);
+    color: var(--text-primary);
   }
 
   @media screen and (max-width: 32rem) {

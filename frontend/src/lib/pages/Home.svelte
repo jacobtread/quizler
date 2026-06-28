@@ -1,11 +1,12 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
 
-  import GitHub from "$components/icons/GitHub.svelte";
-  import Play from "$components/icons/Play.svelte";
-  import Edit from "$components/icons/Edit.svelte";
-  import Logo from "$components/icons/Logo.svelte";
+  import GitHub from "$assets/icons/github.svg?component";
+  import Play from "$assets/icons/play.svg?component";
+  import Edit from "$assets/icons/edit.svg?component";
+  import Logo from "$assets/icons/logo.svg?component";
   import stateContext from "$lib/context/state";
+  import HomeActionButton from "$lib/components/HomeActionButton.svelte";
 
   const appState = stateContext.get();
 </script>
@@ -13,7 +14,7 @@
 <main class="main" transition:slide|global>
   <div class="left">
     <div class="logo">
-      <Logo />
+      <Logo style="width: 100%;height: 100%;display: block;" />
     </div>
 
     <a
@@ -28,21 +29,21 @@
     </a>
   </div>
   <div class="actions">
-    <button onclick={appState.setConnect} class="action" aria-label="Join">
-      <Play />
-      <div class="action__body">
-        <p class="action__name">Join a quiz</p>
-        <p class="action__text">Enter a game code and hop right in</p>
-      </div>
-    </button>
+    <HomeActionButton
+      icon={Play}
+      label="Join a quiz"
+      description="Enter a game code and hop right in"
+      onClick={appState.setConnect}
+      aria-label="Join"
+    />
 
-    <button onclick={appState.setCreate} class="action" aria-label="Create">
-      <Edit />
-      <div class="action__body">
-        <p class="action__name">Create a quiz</p>
-        <p class="action__text">Create your own quiz</p>
-      </div>
-    </button>
+    <HomeActionButton
+      icon={Edit}
+      label="Create a quiz"
+      description="Create your own quiz"
+      onClick={appState.setCreate}
+      aria-label="Create"
+    />
   </div>
 </main>
 
@@ -73,90 +74,10 @@
     height: 100%;
   }
 
-  .logo :global(> svg) {
+  .logo {
     max-width: 16rem;
     padding: 1rem;
-    fill: var(--logo-fill);
-  }
-
-  .action {
-    position: relative;
-    overflow: hidden;
-
-    width: 100%;
-
-    align-items: center;
-    gap: 1rem;
-
-    padding: 1rem;
-    margin-bottom: 1rem;
-
-    border-radius: 1rem;
-
-    background-color: var(--surface);
-    border: 0.15rem solid var(--btn-border-color);
-    text-align: left;
-
-    z-index: 2;
-
-    cursor: pointer;
-
-    transition:
-      background-color 0.5s ease,
-      color 0.2s linear;
-  }
-
-  .action :global(> svg) {
-    float: left;
-    margin-right: 1rem;
-    padding: 1rem;
-    box-sizing: content-box;
-    background-color: var(--surface-light);
-    border-radius: 0.5rem;
-    transition:
-      background-color 0.5s ease,
-      color 0.2s linear;
-  }
-
-  .action__name {
-    font-size: 1.4rem;
-    margin-bottom: 0.25rem;
-    color: var(--text-primary);
-  }
-
-  .action__text {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-  }
-
-  .action:before {
-    content: "";
-
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-
-    background: var(--primary-dark);
-    border-radius: 1rem;
-
-    transform: translate(-100%);
-
-    transition: 0.5s ease;
-  }
-
-  .action:hover {
-    border-color: var(--primary);
-  }
-
-  .action:hover:before {
-    transform: translate(0);
-  }
-
-  .action:hover :global(> svg) {
-    background-color: var(--primary);
+    color: var(--logo-fill);
   }
 
   @media screen and (max-height: 48rem) and (max-width: 52rem) {
@@ -179,19 +100,6 @@
     .actions {
       margin: 1rem;
     }
-
-    .action :global(> svg) {
-      display: block;
-      float: none;
-      width: calc(100% - 2rem);
-      max-height: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .action__body {
-      display: block;
-      width: 100%;
-    }
   }
 
   @media screen and (max-width: 16rem) {
@@ -202,28 +110,9 @@
       margin: 0 auto;
     }
 
-    .logo :global(> svg) {
-      width: 100%;
-    }
-
     .actions {
       text-align: center;
       margin: 0;
-    }
-
-    .action {
-      width: auto;
-    }
-
-    .action__body {
-      display: none;
-    }
-
-    .action :global(> svg) {
-      padding: 1rem;
-      width: auto;
-      margin-bottom: 0;
-      margin-right: 0;
     }
 
     .github {
@@ -238,14 +127,11 @@
   }
 
   @media screen and (max-height: 42rem) {
-    .logo :global(> svg) {
-      max-height: 6rem;
-      max-width: none;
-      padding: 1rem;
-    }
-
     .logo {
+      height: 6rem;
+      max-width: none;
       margin: 0 auto;
+      padding: 1rem;
     }
 
     .main {

@@ -6,7 +6,7 @@
   import { flip } from "svelte/animate";
 
   import Checkbox from "$components/Checkbox.svelte";
-  import Delete from "$components/icons/Delete.svelte";
+  import Delete from "$assets/icons/delete.svg?component";
 
   interface Props {
     question: Question;
