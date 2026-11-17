@@ -27,14 +27,19 @@
 
   let connectState = $state(State.Connect);
 
+  // Pre-fill the token when joining through a quiz invite link or QR code.
+  const inviteToken = new URLSearchParams(window.location.search).get("token") ?? "";
+
   // The user provided token
-  let token: string = $state("");
+  let token: string = $state(
+    inviteToken.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, TOKEN_LENGTH)
+  );
 
   // The user provided name
   let name = $state("");
 
   // Disabled state for the connect button
-  let tokenValid: boolean = $state(false);
+  let tokenValid: boolean = $state(token.length === TOKEN_LENGTH);
 
   // Disabled state for the connect button
   let nameValid: boolean = $state(false);

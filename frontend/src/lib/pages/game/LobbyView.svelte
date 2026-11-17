@@ -28,6 +28,19 @@
   const appState = stateContext.get();
   const socketState = socketContext.get();
 
+  // Build a player invite link using the same token shown in the lobby.
+  const joinUrl = $derived.by(() => {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("token", gameData.token);
+    return url.toString();
+  });
+
+  const qrCodeUrl = $derived(
+    `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`
+  );
+
   // Sends the next state action
   const next = () => doHostAction(socketState, HostAction.Next);
 </script>
@@ -40,6 +53,15 @@
 
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
+
+    <section class="invite" aria-label="Join this quiz">
+      <img class="invite__qr" src={qrCodeUrl} alt={`QR code to join ${gameData.config.name}`} />
+      <div>
+        <h3>Scan to join</h3>
+        <p>Scan this code to open the quiz join page.</p>
+        <a class="invite__link" href={joinUrl}>{joinUrl}</a>
+      </div>
+    </section>
 
     <div class="btn-row btn-row--fill actions">
       <button
@@ -105,6 +127,28 @@
     margin-bottom: 1rem;
   }
 
+  .invite {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--surface);
+  }
+
+  .invite__qr {
+    display: block;
+    width: 11rem;
+    height: 11rem;
+    flex: 0 0 11rem;
+    background: white;
+  }
+
+  .invite__link {
+    overflow-wrap: anywhere;
+  }
+
   .player {
     position: relative;
     background-color: var(--surface);
@@ -134,5 +178,12 @@
 
   .desc {
     margin-bottom: 1rem;
+  }
+
+  @media screen and (max-width: 32rem) {
+    .invite {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>
