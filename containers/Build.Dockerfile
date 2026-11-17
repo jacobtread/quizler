@@ -2,27 +2,26 @@
 
 # Frontend build stage
 # =====================
-FROM node:lts-alpine as frontend
+FROM node:24-alpine AS frontend
 
-# Frontend building
 WORKDIR /app
 
-# Copy the package json and lock file
-COPY frontend/package.json ./
-COPY frontend/package-lock.json ./
+# Copy workspace metadata and frontend package manifest
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/package.json
 
-# Install the dependencies
-RUN npm ci
+# Install the repo dependencies using pnpm, like the GitHub workflow
+RUN npm install -g pnpm@11.9.0 && pnpm install --frozen-lockfile
 
-# Copy the remaining source
-COPY frontend ./
-
-# Build the app
-RUN npm run build
+# Copy the remaining frontend source and build it
+COPY frontend ./frontend
+RUN pnpm --dir frontend run build
 
 # Backend build stage
 # =====================
-FROM rust:1.93.1 as backend
+FROM rust:1.93.1 AS backend
 
 RUN rustup target add x86_64-unknown-linux-musl
 RUN apt update && apt install -y musl-tools musl-dev
@@ -47,16 +46,13 @@ RUN rm -rf ./src
 COPY ./backend/src ./src
 
 # Copy the frontend over
-COPY --from=frontend /app/dist ./public
-
+COPY --from=frontend /app/frontend/dist ./public
 
 # Update the modified time on the project files so they recompile
 RUN touch -a -m ./src/main.rs
 
 # Cargo build real source code
 RUN cargo build --target x86_64-unknown-linux-musl --release
-
-
 
 # Run stage
 # =====================
