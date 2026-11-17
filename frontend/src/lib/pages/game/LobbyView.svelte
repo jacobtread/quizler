@@ -2,6 +2,8 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
+  import { onMount } from "svelte";
+  import QRCode from "qrcode";
 
   import { doHostAction, doKick, leave } from "$api/actions";
   import {
@@ -28,6 +30,9 @@
   const appState = stateContext.get();
   const socketState = socketContext.get();
 
+  let qrCanvas: HTMLCanvasElement;
+  let qrError = $state(false);
+
   // Build a player invite link using the same token shown in the lobby.
   const joinUrl = $derived.by(() => {
     const url = new URL(window.location.href);
@@ -37,9 +42,14 @@
     return url.toString();
   });
 
-  const qrCodeUrl = $derived(
-    `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`
-  );
+  onMount(() => {
+    void QRCode.toCanvas(qrCanvas, joinUrl, { width: 220, margin: 1 }).catch(
+      (error: unknown) => {
+        console.error("Could not generate the invite QR code", error);
+        qrError = true;
+      }
+    );
+  });
 
   // Sends the next state action
   const next = () => doHostAction(socketState, HostAction.Next);
@@ -55,7 +65,18 @@
     <p class="desc">{gameData.config.text}</p>
 
     <section class="invite" aria-label="Join this quiz">
-      <img class="invite__qr" src={qrCodeUrl} alt={`QR code to join ${gameData.config.name}`} />
+      <div class="invite__qr-wrap">
+        <canvas
+          class="invite__qr"
+          bind:this={qrCanvas}
+          role="img"
+          aria-label={`QR code to join ${gameData.config.name}`}
+          hidden={qrError}
+        ></canvas>
+        {#if qrError}
+          <p>QR code unavailable. Use the link to join.</p>
+        {/if}
+      </div>
       <div>
         <h3>Scan to join</h3>
         <p>Scan this code to open the quiz join page.</p>
@@ -137,11 +158,14 @@
     background-color: var(--surface);
   }
 
+  .invite__qr-wrap {
+    flex: 0 0 11rem;
+  }
+
   .invite__qr {
     display: block;
     width: 11rem;
     height: 11rem;
-    flex: 0 0 11rem;
     background: white;
   }
 
