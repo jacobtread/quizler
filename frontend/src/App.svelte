@@ -25,6 +25,13 @@
     const abortController = new AbortController();
     const abortSignal = abortController.signal;
 
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // QR invite links include the quiz token so players land directly on the join screen.
+    if (searchParams.has("token")) {
+      state.setConnect();
+    }
+
     socket.setHandler(
       ServerEvent.ResumedGame,
       (msg) => {

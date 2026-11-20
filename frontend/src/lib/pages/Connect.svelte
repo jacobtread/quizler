@@ -1,5 +1,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
+  import { onMount } from "svelte";
 
   import {
     MAX_PLAYER_NAME_LENGTH,
@@ -26,6 +27,11 @@
   const socket = socketContext.get();
 
   let connectState = $state(State.Connect);
+
+  const searchParams = new URLSearchParams(window.location.search);
+
+  // Pre-fill the token when joining through a quiz invite link or QR code.
+  const inviteToken = searchParams.get("token");
 
   // The user provided token
   let token: string = $state("");
@@ -136,6 +142,14 @@
 
     if (inputName && document.activeElement !== inputName) {
       inputName.focus({ preventScroll: true });
+    }
+  });
+
+  onMount(() => {
+    // Initialize token from invite link
+    if (inviteToken !== null) {
+      token = inviteToken;
+      updateToken();
     }
   });
 </script>
