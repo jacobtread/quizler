@@ -2,8 +2,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { onMount } from "svelte";
-  import QRCode from "qrcode";
 
   import { doHostAction, doKick, leave } from "$api/actions";
   import {
@@ -17,6 +15,8 @@
   import type { GameData } from "$pages/Game.svelte";
   import stateContext from "$lib/context/state";
   import socketContext from "$lib/context/socket";
+  import LobbyViewJoinDetails from "$lib/components/LobbyViewJoinDetails.svelte";
+  import { getInviteURL } from "$lib/api/http";
 
   interface Props {
     gameData: GameData;
@@ -30,26 +30,8 @@
   const appState = stateContext.get();
   const socketState = socketContext.get();
 
-  let qrCanvas: HTMLCanvasElement;
-  let qrError = $state(false);
-
   // Build a player invite link using the same token shown in the lobby.
-  const joinUrl = $derived.by(() => {
-    const url = new URL(window.location.href);
-    url.search = "";
-    url.hash = "";
-    url.searchParams.set("token", gameData.token);
-    return url.toString();
-  });
-
-  onMount(() => {
-    void QRCode.toCanvas(qrCanvas, joinUrl, { width: 220, margin: 1 }).catch(
-      (error: unknown) => {
-        console.error("Could not generate the invite QR code", error);
-        qrError = true;
-      }
-    );
-  });
+  const joinUrl = $derived(getInviteURL(gameData.token));
 
   // Sends the next state action
   const next = () => doHostAction(socketState, HostAction.Next);
@@ -64,25 +46,9 @@
     <h2 class="name">{gameData.config.name}</h2>
     <p class="desc">{gameData.config.text}</p>
 
-    <section class="invite" aria-label="Join this quiz">
-      <div class="invite__qr-wrap">
-        <canvas
-          class="invite__qr"
-          bind:this={qrCanvas}
-          role="img"
-          aria-label={`QR code to join ${gameData.config.name}`}
-          hidden={qrError}
-        ></canvas>
-        {#if qrError}
-          <p>QR code unavailable. Use the link to join.</p>
-        {/if}
-      </div>
-      <div>
-        <h3>Scan to join</h3>
-        <p>Scan this code to open the quiz join page.</p>
-        <a class="invite__link" href={joinUrl}>{joinUrl}</a>
-      </div>
-    </section>
+    {#if joinUrl !== null}
+      <LobbyViewJoinDetails name={gameData.config.name} url={joinUrl} />
+    {/if}
 
     <div class="btn-row btn-row--fill actions">
       <button
@@ -148,31 +114,6 @@
     margin-bottom: 1rem;
   }
 
-  .invite {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1rem 0;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    background-color: var(--surface);
-  }
-
-  .invite__qr-wrap {
-    flex: 0 0 11rem;
-  }
-
-  .invite__qr {
-    display: block;
-    width: 11rem;
-    height: 11rem;
-    background: white;
-  }
-
-  .invite__link {
-    overflow-wrap: anywhere;
-  }
-
   .player {
     position: relative;
     background-color: var(--surface);
@@ -202,12 +143,5 @@
 
   .desc {
     margin-bottom: 1rem;
-  }
-
-  @media screen and (max-width: 32rem) {
-    .invite {
-      align-items: flex-start;
-      flex-direction: column;
-    }
   }
 </style>

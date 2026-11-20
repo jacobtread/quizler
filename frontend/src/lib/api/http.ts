@@ -11,13 +11,30 @@ import type { StoredImage } from "$stores/imageStore";
  */
 export function getServerURL(path: string): URL {
   const url = new URL(path, window.location.origin);
-
-  if (import.meta.env.DEV) {
-    // Replace the server port for dev environment
-    url.port = "80";
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_BACKEND_URL) {
+    return new URL(path, import.meta.env.VITE_DEV_BACKEND_URL);
   }
 
   return url;
+}
+
+/**
+ * Get a game invite URL for the provided token
+ *
+ * @param token The token
+ * @returns The invite URL or null if none are available
+ */
+export function getInviteURL(token: string): string | null {
+  const url = getServerURL("/");
+
+  // If the URL is localhost then other users won't be able to join
+  // from the URL so we don't provide one
+  if (url.hostname === "localhost") {
+    return null;
+  }
+
+  url.searchParams.set("token", token);
+  return url.toString();
 }
 
 /**
