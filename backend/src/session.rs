@@ -312,11 +312,11 @@ impl Session {
         // Handle different message types
         match msg {
             Message::Text(text) => {
-                let res = match self.handle_text_message(text) {
-                    Ok(value) => ServerResponse(value),
-                    Err(error) => ServerResponse(ResponseMessage::Error { error }),
+                let message = match self.handle_text_message(text) {
+                    Ok(value) => value,
+                    Err(error) => ResponseMessage::Error { error },
                 };
-
+                let res = ServerResponse { ret: 1, message };
                 self.send(&res)?;
                 Ok(())
             }

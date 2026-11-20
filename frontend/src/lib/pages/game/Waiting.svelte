@@ -55,7 +55,7 @@
   .title {
     font-size: 3rem;
 
-    color: #fff;
+    color: var(--text-primary);
     text-shadow: 0 3px 1px var(--partial-start-text-shadow-dark);
   }
 
@@ -63,7 +63,7 @@
     font-size: 1.25rem;
 
     margin-bottom: 1rem;
-    color: var(--partial-start-text);
+    color: var(--text--secondary);
   }
 
   .bottom {

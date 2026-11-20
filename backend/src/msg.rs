@@ -8,26 +8,17 @@ use crate::{
         ServerError,
     },
 };
-use serde::{Deserialize, Serialize, ser::SerializeMap};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
 /// Wrapper around the response message type to include
 /// "ret": 1, which is used to indicate this is a response
-pub struct ServerResponse(pub ResponseMessage);
-
-impl Serialize for ServerResponse {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut map = serializer.serialize_map(None)?;
-        map.serialize_entry("ret", &1)?;
-
-        self.0
-            .serialize(serde::__private228::ser::FlatMapSerializer(&mut map))?;
-        map.end()
-    }
+#[derive(Serialize)]
+pub struct ServerResponse {
+    pub ret: u8,
+    #[serde(flatten)]
+    pub message: ResponseMessage,
 }
 
 /// Message to initialize the desired game as a host
